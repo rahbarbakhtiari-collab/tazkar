@@ -262,7 +262,7 @@ final class CsvImportService {
 			)
 		);
 
-		if ( $errors === count( $results ) && 0 === $success ) {
+		if ( count( $results ) === $errors && 0 === $success ) {
 			return 'failed';
 		}
 
