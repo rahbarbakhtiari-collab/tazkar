@@ -14,6 +14,8 @@ final class Taxonomies {
 	 * @return array<string, array<string, mixed>>
 	 */
 	public static function definitions(): array {
+		$capabilities = self::capabilities();
+
 		return array(
 			self::TOPIC => array(
 				'labels'            => array(
@@ -25,6 +27,7 @@ final class Taxonomies {
 				'show_admin_column' => true,
 				'show_in_rest'      => true,
 				'hierarchical'      => true,
+				'capabilities'      => $capabilities,
 				'rewrite'           => array( 'slug' => 'reminder-topic' ),
 			),
 			self::TAG   => array(
@@ -37,8 +40,21 @@ final class Taxonomies {
 				'show_admin_column' => true,
 				'show_in_rest'      => true,
 				'hierarchical'      => false,
+				'capabilities'      => $capabilities,
 				'rewrite'           => array( 'slug' => 'reminder-tag' ),
 			),
+		);
+	}
+
+	/**
+	 * @return array<string, string>
+	 */
+	private static function capabilities(): array {
+		return array(
+			'manage_terms' => 'manage_tazkar',
+			'edit_terms'   => 'manage_tazkar',
+			'delete_terms' => 'manage_tazkar',
+			'assign_terms' => 'manage_tazkar',
 		);
 	}
 
