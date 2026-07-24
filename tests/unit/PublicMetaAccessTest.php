@@ -5,11 +5,13 @@ use Tazkar\Content\PublicMetaAccess;
 
 final class PublicMetaAccessTest extends TestCase {
     protected function tearDown(): void {
-        $GLOBALS['tazkar_test_post_status'] = 'publish';
+        $GLOBALS['tazkar_test_post_status']   = 'publish';
+        $GLOBALS['tazkar_test_review_status'] = 'approved';
     }
 
-    public function test_published_meta_is_readable_without_weakening_write_checks(): void {
-        $GLOBALS['tazkar_test_post_status'] = 'publish';
+    public function test_only_published_and_approved_meta_is_publicly_readable(): void {
+        $GLOBALS['tazkar_test_post_status']   = 'publish';
+        $GLOBALS['tazkar_test_review_status'] = 'approved';
 
         self::assertTrue(
             PublicMetaAccess::authorize(
@@ -21,6 +23,34 @@ final class PublicMetaAccessTest extends TestCase {
                 array()
             )
         );
+
+        $GLOBALS['tazkar_test_review_status'] = 'needs_recheck';
+        self::assertFalse(
+            PublicMetaAccess::authorize(
+                false,
+                'tazkar_arabic_text',
+                42,
+                0,
+                'read_post_meta',
+                array()
+            )
+        );
+
+        $GLOBALS['tazkar_test_review_status'] = 'approved';
+        $GLOBALS['tazkar_test_post_status']   = 'draft';
+        self::assertFalse(
+            PublicMetaAccess::authorize(
+                false,
+                'tazkar_arabic_text',
+                42,
+                0,
+                'read_post_meta',
+                array()
+            )
+        );
+    }
+
+    public function test_public_read_rule_does_not_weaken_write_checks(): void {
         self::assertFalse(
             PublicMetaAccess::authorize(
                 false,
@@ -31,28 +61,13 @@ final class PublicMetaAccessTest extends TestCase {
                 array()
             )
         );
-    }
-
-    public function test_draft_meta_keeps_existing_authorization_result(): void {
-        $GLOBALS['tazkar_test_post_status'] = 'draft';
-
-        self::assertFalse(
-            PublicMetaAccess::authorize(
-                false,
-                'tazkar_arabic_text',
-                42,
-                0,
-                'read_post_meta',
-                array()
-            )
-        );
         self::assertTrue(
             PublicMetaAccess::authorize(
                 true,
                 'tazkar_arabic_text',
                 42,
                 1,
-                'read_post_meta',
+                'edit_post_meta',
                 array( 'edit_tazkar_item' )
             )
         );
