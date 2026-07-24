@@ -9,7 +9,8 @@ require_once dirname( __DIR__ ) . '/src/Autoloader.php';
 
 Tazkar\Autoloader::register( dirname( __DIR__ ) . '/src/' );
 
-$GLOBALS['tazkar_test_post_status'] = 'publish';
+$GLOBALS['tazkar_test_post_status']   = 'publish';
+$GLOBALS['tazkar_test_review_status'] = 'approved';
 
 if ( ! function_exists( '__' ) ) {
     function __( $text, $domain = 'default' ) {
@@ -47,5 +48,17 @@ if ( ! function_exists( 'get_post_status' ) ) {
     function get_post_status( $post_id ) {
         unset( $post_id );
         return $GLOBALS['tazkar_test_post_status'];
+    }
+}
+
+if ( ! function_exists( 'get_post_meta' ) ) {
+    function get_post_meta( $post_id, $key = '', $single = false ) {
+        unset( $post_id, $single );
+
+        if ( 'tazkar_review_status' === $key ) {
+            return $GLOBALS['tazkar_test_review_status'];
+        }
+
+        return '';
     }
 }
