@@ -5,6 +5,7 @@ namespace Tazkar;
 use Tazkar\Admin\StatusPage;
 use Tazkar\Content\ContentType;
 use Tazkar\Content\MetaRegistry;
+use Tazkar\Content\PublicMetaAccess;
 use Tazkar\Content\SensitiveChangeGuard;
 use Tazkar\Content\Taxonomies;
 use Tazkar\Core\Capabilities;
@@ -43,6 +44,7 @@ final class Bootstrap {
 		add_action( 'init', array( ContentType::class, 'register' ), 5 );
 		add_action( 'init', array( Taxonomies::class, 'register' ), 6 );
 		add_action( 'init', array( MetaRegistry::class, 'register' ), 7 );
+		PublicMetaAccess::register();
 		SensitiveChangeGuard::register();
 
 		add_action( 'admin_init', array( Migrator::class, 'maybe_migrate' ) );
