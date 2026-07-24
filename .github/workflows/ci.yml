@@ -27,13 +27,13 @@ jobs:
           coverage: none
           tools: composer:v2
       - run: composer validate --strict
-      - run: composer install --no-interaction --prefer-dist
-      - run: composer audit --no-interaction
+      - run: composer install --no-interaction --prefer-dist --no-progress --quiet
+      - run: vendor/bin/phpcs --report=full
+      - run: composer audit --no-interaction --format=plain
       - run: python3 scripts/scan_secrets.py
       - run: composer lint
       - run: composer test
       - run: php tests/activation-smoke.php
-      - run: vendor/bin/phpcs
       - run: vendor/bin/phpstan analyse
       - run: vendor/bin/phpunit
       - run: composer build
@@ -67,7 +67,7 @@ jobs:
           php-version: '8.3'
           coverage: none
           tools: composer:v2, wp-cli
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer install --no-interaction --prefer-dist --no-progress --quiet
       - run: composer build
       - run: |
           mkdir -p /tmp/wordpress
