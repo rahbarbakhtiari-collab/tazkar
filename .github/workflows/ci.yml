@@ -32,7 +32,22 @@ jobs:
           tools: composer:v2
       - run: composer validate --strict
       - run: composer install --no-interaction --prefer-dist --no-progress --quiet
-      - run: vendor/bin/phpcs
+      - name: Run PHPCS and retain diagnostics
+        id: phpcs
+        continue-on-error: true
+        run: vendor/bin/phpcs --report=json --report-file=phpcs-report.json
+      - name: Upload PHPCS diagnostics
+        if: steps.phpcs.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpcs-report-${{ matrix.php }}
+          path: phpcs-report.json
+          retention-days: 7
+      - name: Enforce PHPCS
+        if: steps.phpcs.outcome == 'failure'
+        run: |
+          php -r '$report = json_decode(file_get_contents("phpcs-report.json"), true); foreach ($report["files"] as $file => $details) { foreach ($details["messages"] as $message) { printf("%s:%d:%d %s [%s]\n", $file, $message["line"], $message["column"], $message["message"], $message["source"]); } }'
+          exit 1
       - run: composer audit --no-interaction --format=plain
       - run: python3 scripts/scan_secrets.py
       - run: composer lint
