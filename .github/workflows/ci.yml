@@ -36,13 +36,23 @@ jobs:
           code=$?
           echo "$code" > phpcs-exit-code
           exit 0
+      - name: Generate PHPCBF patch
+        if: matrix.php == '8.3'
+        shell: bash
+        run: |
+          set +e
+          vendor/bin/phpcbf
+          git diff -- tazkar.php uninstall.php src > phpcbf.patch
+          git checkout -- tazkar.php uninstall.php src
+          exit 0
       - uses: actions/upload-artifact@v4
         if: matrix.php == '8.3'
         with:
-          name: phpcs-report
+          name: phpcs-diagnostics
           path: |
             phpcs-report.json
             phpcs-exit-code
+            phpcbf.patch
       - name: Enforce PHPCS result
         run: test "$(cat phpcs-exit-code)" = "0"
       - run: composer audit --no-interaction --format=plain
