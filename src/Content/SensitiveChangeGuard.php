@@ -42,9 +42,13 @@ final class SensitiveChangeGuard {
     }
 
     /**
-     * @param mixed $check      Short-circuit value.
-     * @param mixed $meta_value New value.
-     * @param mixed $unique     Unique flag.
+     * Mark an approved item before a sensitive meta value is added.
+     *
+     * @param mixed  $check      Short-circuit value.
+     * @param int    $object_id  Target post ID.
+     * @param string $meta_key   Meta key.
+     * @param mixed  $meta_value New value.
+     * @param mixed  $unique     Unique flag.
      * @return mixed
      */
     public static function before_add( $check, int $object_id, string $meta_key, $meta_value, $unique ) {
@@ -60,9 +64,13 @@ final class SensitiveChangeGuard {
     }
 
     /**
-     * @param mixed $check      Short-circuit value.
-     * @param mixed $meta_value New value.
-     * @param mixed $prev_value Previous value supplied to WordPress.
+     * Mark an approved item before a sensitive meta value is updated.
+     *
+     * @param mixed  $check      Short-circuit value.
+     * @param int    $object_id  Target post ID.
+     * @param string $meta_key   Meta key.
+     * @param mixed  $meta_value New value.
+     * @param mixed  $prev_value Previous value supplied to WordPress.
      * @return mixed
      */
     public static function before_update( $check, int $object_id, string $meta_key, $meta_value, $prev_value ) {
@@ -79,9 +87,13 @@ final class SensitiveChangeGuard {
     }
 
     /**
-     * @param mixed $check      Short-circuit value.
-     * @param mixed $meta_value Value constraint.
-     * @param mixed $delete_all Delete-all flag.
+     * Mark an approved item before sensitive meta is deleted.
+     *
+     * @param mixed  $check      Short-circuit value.
+     * @param int    $object_id  Target post ID.
+     * @param string $meta_key   Meta key.
+     * @param mixed  $meta_value Value constraint.
+     * @param mixed  $delete_all Delete-all flag.
      * @return mixed
      */
     public static function before_delete( $check, int $object_id, string $meta_key, $meta_value, $delete_all ) {
@@ -98,7 +110,12 @@ final class SensitiveChangeGuard {
     }
 
     /**
-     * @param mixed $meta_value Stored value reported by WordPress.
+     * Refresh the exact Arabic SHA-256 after metadata changes.
+     *
+     * @param int    $meta_id    Metadata row ID.
+     * @param int    $object_id  Target post ID.
+     * @param string $meta_key   Meta key.
+     * @param mixed  $meta_value Stored value reported by WordPress.
      */
     public static function refresh_arabic_hash( int $meta_id, int $object_id, string $meta_key, $meta_value ): void {
         unset( $meta_id, $meta_value );
@@ -115,8 +132,12 @@ final class SensitiveChangeGuard {
     }
 
     /**
-     * @param int[] $meta_ids Deleted meta IDs.
-     * @param mixed $meta_value Deleted value.
+     * Remove the Arabic hash after Arabic metadata is deleted.
+     *
+     * @param int[]  $meta_ids   Deleted meta IDs.
+     * @param int    $object_id  Target post ID.
+     * @param string $meta_key   Meta key.
+     * @param mixed  $meta_value Deleted value.
      */
     public static function after_delete( array $meta_ids, int $object_id, string $meta_key, $meta_value ): void {
         unset( $meta_ids, $meta_value );
@@ -129,13 +150,23 @@ final class SensitiveChangeGuard {
         }
     }
 
+    /**
+     * Hash the exact stored Arabic bytes.
+     *
+     * @param string $arabic Exact Arabic value.
+     */
     public static function hash_arabic( string $arabic ): string {
         return hash( 'sha256', $arabic );
     }
 
     /**
-     * @param mixed $old_value Previous value.
-     * @param mixed $new_value New value.
+     * Decide whether a metadata transition invalidates approval.
+     *
+     * @param string $post_type     Post type.
+     * @param string $review_status Current review status.
+     * @param string $meta_key      Changed meta key.
+     * @param mixed  $old_value     Previous value.
+     * @param mixed  $new_value     New value.
      */
     public static function should_mark_for_recheck(
         string $post_type,
@@ -151,8 +182,12 @@ final class SensitiveChangeGuard {
     }
 
     /**
-     * @param mixed $old_value Previous value.
-     * @param mixed $new_value New value.
+     * Apply the needs_recheck transition when required.
+     *
+     * @param int    $object_id Target post ID.
+     * @param string $meta_key  Changed meta key.
+     * @param mixed  $old_value Previous value.
+     * @param mixed  $new_value New value.
      */
     private static function mark_if_needed( int $object_id, string $meta_key, $old_value, $new_value ): void {
         if ( self::$updating_status ) {

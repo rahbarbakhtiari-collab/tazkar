@@ -115,7 +115,11 @@ final class MetaRegistry {
     }
 
     /**
+     * Build one registered meta definition.
+     *
+     * @param string   $type              REST and metadata scalar type.
      * @param callable $sanitize_callback Sanitizer callback.
+     * @param bool     $show_in_rest      Whether the field is public in REST.
      * @return array<string, mixed>
      */
     private static function definition( string $type, callable $sanitize_callback, bool $show_in_rest ): array {
@@ -128,6 +132,13 @@ final class MetaRegistry {
         );
     }
 
+    /**
+     * Authorize metadata writes through WordPress capability checks.
+     *
+     * @param bool   $allowed  Existing authorization result.
+     * @param string $meta_key Registered meta key.
+     * @param int    $post_id  Target post ID.
+     */
     public static function can_edit_meta( bool $allowed, string $meta_key, int $post_id ): bool {
         unset( $allowed, $meta_key );
 
