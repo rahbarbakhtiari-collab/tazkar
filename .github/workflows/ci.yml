@@ -116,3 +116,4 @@ jobs:
           wp plugin activate tazkar --path=/tmp/wordpress
           wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-content-model-smoke.php" --path=/tmp/wordpress
           wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-csv-preview-smoke.php" --path=/tmp/wordpress
+          wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-csv-import-smoke.php" --path=/tmp/wordpress
