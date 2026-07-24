@@ -1,6 +1,6 @@
-# Tazkar – Sprint 0
+# Tazkar – Sprint 1
 
-نخستین اسکلت نصب‌شدنی افزونه تذکار.
+مدل محتوای نصب‌شدنی افزونه تذکار روی زیرساخت Sprint صفر.
 
 ## نیازمندی‌ها
 
@@ -30,7 +30,7 @@ composer build
 
 ## محدوده این نسخه
 
-این نسخه فقط Bootstrap، migration، capabilityها و صفحه وضعیت مدیریت را دارد. CPT، درون‌ریز و frontend در Sprintهای بعدی ساخته می‌شوند.
+این نسخه علاوه بر زیرساخت Sprint صفر، CPT `tazkar_item`، taxonomyها، metaهای قرارداد داده، hash متن عربی و محافظ تغییرات حساس را دارد. درون‌ریز و frontend در Sprintهای بعدی ساخته می‌شوند.
 
 ## سیاست داده
 
@@ -44,8 +44,7 @@ composer build
 - راه‌اندازی GitHub: [`docs/development/GITHUB-BOOTSTRAP.md`](docs/development/GITHUB-BOOTSTRAP.md)
 - نصب و تست Local: [`docs/development/LOCAL-SETUP-AND-HUMAN-TEST.md`](docs/development/LOCAL-SETUP-AND-HUMAN-TEST.md)
 - روال همکاری Codex: [`docs/development/CODEX-COLLABORATION-WORKFLOW.md`](docs/development/CODEX-COLLABORATION-WORKFLOW.md)
-- نخستین Task: [`tasks/CODEX-00-SPRINT-0-BASELINE-AUDIT.md`](tasks/CODEX-00-SPRINT-0-BASELINE-AUDIT.md)
-
+- وضعیت جاری: [`docs/management/project-status.md`](docs/management/project-status.md)
 
 ## Autonomous development
 

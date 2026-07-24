@@ -3,6 +3,12 @@
 namespace Tazkar;
 
 use Tazkar\Admin\StatusPage;
+use Tazkar\Content\ContentType;
+use Tazkar\Content\MetaRegistry;
+use Tazkar\Content\PublicMetaAccess;
+use Tazkar\Content\SensitiveChangeGuard;
+use Tazkar\Content\SensitivePublicationGuard;
+use Tazkar\Content\Taxonomies;
 use Tazkar\Core\Capabilities;
 use Tazkar\Infrastructure\Database\Migrator;
 
@@ -35,6 +41,13 @@ final class Bootstrap {
 		$this->registered = true;
 
 		load_plugin_textdomain( 'tazkar', false, dirname( plugin_basename( TAZKAR_PLUGIN_FILE ) ) . '/languages' );
+
+		add_action( 'init', array( ContentType::class, 'register' ), 5 );
+		add_action( 'init', array( Taxonomies::class, 'register' ), 6 );
+		add_action( 'init', array( MetaRegistry::class, 'register' ), 7 );
+		PublicMetaAccess::register();
+		SensitiveChangeGuard::register();
+		SensitivePublicationGuard::register();
 
 		add_action( 'admin_init', array( Migrator::class, 'maybe_migrate' ) );
 		add_action( 'admin_init', array( Capabilities::class, 'maybe_sync' ) );

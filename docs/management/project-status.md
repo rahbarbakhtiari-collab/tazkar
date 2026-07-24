@@ -1,34 +1,60 @@
 # وضعیت پروژه تذکار
 
+**شناسه سند:** `docs/management/project-status.md`  
 **نسخه:** ۱٫۳  
 **تاریخ:** ۲۰۲۶/۰۷/۲۴  
 **وضعیت:** فعال  
-**مرحله فعلی:** تکمیل زیرساخت توسعه خودکار و آماده‌سازی Sprint 1
+**مرحله فعلی:** اجرای خودکار Sprint 1 — مدل محتوا
 
-## وضعیت قطعی
+---
 
-- مخزن GitHub: `rahbarbakhtiari-collab/tazkar`؛
-- Sprint صفر در Pull Request شماره ۱ با CI واقعی ادغام شده است؛
-- merge commit خط مبنا: `56b6598048eba8e3539e1a2e61ccf84a9120b4cc`؛
+## خلاصه
+
+- مخزن خصوصی `rahbarbakhtiari-collab/tazkar` منبع حقیقت کد و CI است.
+- Sprint صفر با CI واقعی، WordPress 7.0.2، MySQL و یک نصب موفق Local پایان یافته است.
+- تست انسانی مرحله‌ای تا Release Candidate متوقف است.
+- Issue شماره ۴، مدل محتوای Sprint 1 را اجرا می‌کند.
+- نسخه نامزد Sprint 1 برابر `0.2.0-alpha.1` است.
+
+## خروجی پایدار Sprint صفر
+
+- Bootstrap و autoload؛
+- بررسی WordPress 6.8+ و PHP 8.1+؛
+- capabilityهای پایه؛
+- migration نسخه‌دار و چهار جدول عملیاتی؛
+- صفحه وضعیت مدیریت؛
+- build قطعی ZIP و checksum؛
+- PHPCS، PHPStan، PHPUnit و GitHub Actions؛
+- نصب، فعال‌سازی، غیرفعال‌سازی و فعال‌سازی مجدد روی WordPress/MySQL.
+
+## کار جاری Sprint 1
+
+- ثبت CPT `tazkar_item`؛
+- ثبت taxonomyهای `tazkar_topic` و `tazkar_tag`؛
+- ثبت ۲۹ meta متناظر با قرارداد داده ۱٫۱؛
+- allowlist صریح REST؛
+- حفظ عین متن عربی و SHA-256 داخلی؛
+- بازگرداندن `approved` به `needs_recheck` پس از تغییر فیلد حساس؛
+- آزمون واحد و smoke واقعی WordPress/MySQL.
+
+## دروازه پایان Sprint 1
+
+Sprint 1 فقط پس از این موارد Done است:
+
+- PR Policy سبز؛
 - PHP 8.1، 8.3، 8.4 و 8.5 سبز؛
-- نصب، فعال‌سازی، غیرفعال‌سازی و فعال‌سازی مجدد روی WordPress 7.0.2 و MySQL 8 سبز؛
-- تست انسانی میانی حذف شده است؛
-- پذیرش انسانی فقط روی artifact رسمی Release Candidate انجام می‌شود؛
-- تأیید علمی نهایی محتوای دینی همچنان انسانی است.
+- PHPCS، PHPStan و PHPUnit سبز؛
+- آزمون WordPress/MySQL مدل محتوا سبز؛
+- ZIP نسخه `0.2.0-alpha.1` ساخته شود؛
+- PR با `automerge` بدون تصمیم انسانی ادغام شود؛
+- Issue شماره ۴ با گزارش `PASS` بسته شود.
 
-## کار جاری
+## مرحله بعد
 
-Issue شماره ۲ اسناد حاکم، fixtureهای نسخه ۱٫۱، workflow شبانه، workflow Release Candidate، قالب Issue/PR و راهنمای Orchestrator را به مخزن اضافه می‌کند.
+پس از پایان Sprint 1، Sprint 2 به validator مستقل قرارداد داده ۱٫۱ اختصاص دارد. درون‌ریز CSV هنوز آغاز نمی‌شود.
 
-## کار بعدی
+## سیاست انسانی
 
-پس از ادغام Issue شماره ۲:
-
-1. تعریف Issue اجرایی Sprint 1؛
-2. پیاده‌سازی CPT، taxonomy و metaهای ثبت‌شده؛
-3. اجرای CI و بازبینی عامل مستقل؛
-4. ادامه Sprintها بدون تست انسانی تا Release Candidate.
-
-## مانع بیرونی باقی‌مانده
-
-GitHub Actions و policyها فعال‌اند، اما فراخوانی خودکار Codex از Issue/CI نیازمند یک‌بار اتصال repository به Codex Environment و ساخت Automationهای Issue Dispatcher و CI Repair است. تا انجام آن، این گفتگو می‌تواند نقش orchestrator فعال را انجام دهد، اما فرایند دائمی و بدون جلسه نیست.
+- تست انسانی بعدی فقط برای Release Candidate رسمی انجام می‌شود.
+- تأیید نهایی علمی و دینی محتوا همچنان انسانی است.
+- عامل فقط در تعارض اسناد، تصمیم محصول/حریم خصوصی/دینی، نیاز به secret یا سه شکست تکراری توقف می‌کند.

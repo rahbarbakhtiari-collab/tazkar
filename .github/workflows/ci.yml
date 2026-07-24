@@ -32,13 +32,43 @@ jobs:
           tools: composer:v2
       - run: composer validate --strict
       - run: composer install --no-interaction --prefer-dist --no-progress --quiet
-      - run: vendor/bin/phpcs
+      - name: Run PHPCS and retain diagnostics
+        id: phpcs
+        continue-on-error: true
+        run: vendor/bin/phpcs --report=json --report-file=phpcs-report.json
+      - name: Upload PHPCS diagnostics
+        if: steps.phpcs.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpcs-report-${{ matrix.php }}
+          path: phpcs-report.json
+          retention-days: 7
+      - name: Enforce PHPCS
+        if: steps.phpcs.outcome == 'failure'
+        run: |
+          php -r '$report = json_decode(file_get_contents("phpcs-report.json"), true); foreach ($report["files"] as $file => $details) { foreach ($details["messages"] as $message) { printf("%s:%d:%d %s [%s]\n", $file, $message["line"], $message["column"], $message["message"], $message["source"]); } }'
+          exit 1
       - run: composer audit --no-interaction --format=plain
       - run: python3 scripts/scan_secrets.py
       - run: composer lint
       - run: composer test
       - run: php tests/activation-smoke.php
-      - run: vendor/bin/phpstan analyse
+      - name: Run PHPStan and retain diagnostics
+        id: phpstan
+        continue-on-error: true
+        run: vendor/bin/phpstan analyse --error-format=json > phpstan-report.json
+      - name: Upload PHPStan diagnostics
+        if: steps.phpstan.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpstan-report-${{ matrix.php }}
+          path: phpstan-report.json
+          retention-days: 7
+      - name: Enforce PHPStan
+        if: steps.phpstan.outcome == 'failure'
+        run: |
+          php -r '$report = json_decode(file_get_contents("phpstan-report.json"), true); foreach ($report["files"] as $file => $details) { foreach ($details["messages"] as $message) { printf("%s:%d %s [%s]\n", $file, $message["line"], $message["message"], $message["identifier"] ?? "phpstan"); } } foreach ($report["errors"] as $error) { echo $error, "\n"; }'
+          exit 1
       - run: vendor/bin/phpunit
       - run: composer build
       - uses: actions/upload-artifact@v4
@@ -78,8 +108,10 @@ jobs:
           wp core download --path=/tmp/wordpress --version=7.0.2
           wp config create --path=/tmp/wordpress --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=127.0.0.1:3306
           wp core install --path=/tmp/wordpress --url=http://localhost --title=Tazkar --admin_user=admin --admin_password=password --admin_email=admin@example.com
-          wp plugin install "$GITHUB_WORKSPACE/dist/tazkar-0.1.0-alpha.1.zip" --path=/tmp/wordpress --activate
+          zip=$(find "$GITHUB_WORKSPACE/dist" -name 'tazkar-*.zip' -type f | head -n 1)
+          wp plugin install "$zip" --path=/tmp/wordpress --activate
           test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "1"
           wp plugin deactivate tazkar --path=/tmp/wordpress
           test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "1"
           wp plugin activate tazkar --path=/tmp/wordpress
+          wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-content-model-smoke.php" --path=/tmp/wordpress
