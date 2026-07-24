@@ -1,0 +1,71 @@
+name: Release Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: RC version, for example 0.9.0-rc.1
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  full-gates:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.3']
+        wordpress: ['6.8', 'latest']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2, wp-cli
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer audit --no-interaction
+      - run: composer lint
+      - run: vendor/bin/phpcs
+      - run: vendor/bin/phpstan analyse
+      - run: vendor/bin/phpunit
+      - run: composer build
+      - name: WordPress install matrix
+        run: |
+          path="/tmp/wp-${{ matrix.php }}-${{ matrix.wordpress }}"
+          mkdir -p "$path"
+          if [ "${{ matrix.wordpress }}" = "latest" ]; then
+            wp core download --path="$path"
+          else
+            wp core download --path="$path" --version="${{ matrix.wordpress }}"
+          fi
+          wp config create --path="$path" --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=127.0.0.1:3306 --dbprefix="rc_"
+          wp core install --path="$path" --url=http://localhost --title=Tazkar --admin_user=admin --admin_password=password --admin_email=admin@example.com
+          zip=$(find "$GITHUB_WORKSPACE/dist" -name 'tazkar-*.zip' -type f | head -n 1)
+          wp plugin install "$zip" --path="$path" --activate
+          wp plugin deactivate tazkar --path="$path"
+          wp plugin activate tazkar --path="$path"
+      - uses: actions/upload-artifact@v4
+        if: matrix.php == '8.3' && matrix.wordpress == 'latest'
+        with:
+          name: tazkar-${{ inputs.version }}
+          path: dist/tazkar-*.zip*
+          retention-days: 30

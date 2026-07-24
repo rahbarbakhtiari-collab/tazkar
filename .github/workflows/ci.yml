@@ -21,6 +21,10 @@ jobs:
         php: ['8.1', '8.3', '8.4', '8.5']
     steps:
       - uses: actions/checkout@v4
+      - name: Validate repository documents and fixtures
+        run: python3 scripts/validate_repository.py
+      - name: Validate GitHub YAML
+        run: ruby -e 'require "yaml"; Dir[".github/**/*.yml"].sort.each { |file| YAML.load_file(file); puts file }'
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
