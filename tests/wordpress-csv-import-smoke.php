@@ -3,6 +3,7 @@
 use Tazkar\Content\ContentType;
 use Tazkar\Content\MetaRegistry;
 use Tazkar\Import\CsvImportService;
+use Tazkar\Import\WordPressContentWriter;
 use Tazkar\Infrastructure\Database\Schema;
 use Tazkar\Validation\ContractSchema;
 
@@ -18,6 +19,14 @@ if ( false === $fixture_json ) {
 $valid = json_decode( $fixture_json, true );
 if ( ! is_array( $valid ) ) {
 	$fail( 'Validation fixture is invalid.' );
+}
+
+$writer_probe = new WordPressContentWriter();
+try {
+	$probe_post_id = $writer_probe->create_draft( $valid, 1 );
+	$writer_probe->delete( $probe_post_id );
+} catch ( Throwable $exception ) {
+	$fail( 'WordPress content writer failed: ' . $exception->getMessage() );
 }
 
 $duplicate = $valid;
