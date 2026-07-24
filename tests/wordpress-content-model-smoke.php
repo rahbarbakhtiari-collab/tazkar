@@ -98,12 +98,6 @@ if ( 'approved' !== get_post_meta( $post_id, MetaRegistry::key( 'review_status' 
     $fail( 'Non-sensitive change reset approval.' );
 }
 
-$published_arabic = $arabic . ' ';
-update_post_meta( $post_id, MetaRegistry::key( 'arabic_text' ), $published_arabic );
-if ( 'needs_recheck' !== get_post_meta( $post_id, MetaRegistry::key( 'review_status' ), true ) ) {
-    $fail( 'Sensitive Arabic change did not require recheck.' );
-}
-
 update_post_meta( $post_id, MetaRegistry::key( 'batch_id' ), 'internal-batch' );
 wp_update_post(
     array(
@@ -116,14 +110,14 @@ wp_set_current_user( 0 );
 $request  = new WP_REST_Request( 'GET', '/wp/v2/tazkar_item/' . $post_id );
 $response = rest_do_request( $request );
 if ( is_wp_error( $response ) || 200 !== $response->get_status() ) {
-    $fail( 'Public REST request failed.' );
+    $fail( 'Approved public REST request failed.' );
 }
 
 $data = $response->get_data();
 if ( ! isset( $data['meta'][ MetaRegistry::key( 'arabic_text' ) ] ) ) {
     $fail( 'Public REST meta allowlist is not active.' );
 }
-if ( $published_arabic !== $data['meta'][ MetaRegistry::key( 'arabic_text' ) ] ) {
+if ( $arabic !== $data['meta'][ MetaRegistry::key( 'arabic_text' ) ] ) {
     $fail( 'REST response mutated the Arabic value.' );
 }
 if ( isset( $data['meta'][ MetaRegistry::key( 'batch_id' ) ] ) ) {
@@ -131,6 +125,26 @@ if ( isset( $data['meta'][ MetaRegistry::key( 'batch_id' ) ] ) ) {
 }
 if ( isset( $data['meta'][ MetaRegistry::ARABIC_HASH_KEY ] ) ) {
     $fail( 'Internal Arabic hash leaked through REST.' );
+}
+
+wp_set_current_user( $administrator->ID );
+$changed_arabic = $arabic . ' ';
+update_post_meta( $post_id, MetaRegistry::key( 'arabic_text' ), $changed_arabic );
+
+if ( 'needs_recheck' !== get_post_meta( $post_id, MetaRegistry::key( 'review_status' ), true ) ) {
+    $fail( 'Sensitive Arabic change did not require recheck.' );
+}
+if ( 'draft' !== get_post_status( $post_id ) ) {
+    $fail( 'Sensitive change did not remove the item from public view.' );
+}
+if ( hash( 'sha256', $changed_arabic ) !== get_post_meta( $post_id, MetaRegistry::ARABIC_HASH_KEY, true ) ) {
+    $fail( 'Changed Arabic SHA-256 hash mismatch.' );
+}
+
+wp_set_current_user( 0 );
+$draft_response = rest_do_request( new WP_REST_Request( 'GET', '/wp/v2/tazkar_item/' . $post_id ) );
+if ( ! is_wp_error( $draft_response ) && 200 === $draft_response->get_status() ) {
+    $fail( 'Needs-recheck draft remained publicly readable.' );
 }
 
 wp_set_current_user( $administrator->ID );
