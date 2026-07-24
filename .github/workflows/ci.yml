@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+      - run: composer validate --strict
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer audit --no-interaction
+      - run: python3 scripts/scan_secrets.py
+      - run: composer lint
+      - run: composer test
+      - run: php tests/activation-smoke.php
+      - run: vendor/bin/phpcs
+      - run: vendor/bin/phpstan analyse
+      - run: vendor/bin/phpunit
+      - run: composer build
+      - uses: actions/upload-artifact@v4
+        if: matrix.php == '8.3'
+        with:
+          name: tazkar-plugin-zip
+          path: dist/tazkar-*.zip*
+
+  wordpress-smoke:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2, wp-cli
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer build
+      - run: |
+          mkdir -p /tmp/wordpress
+          wp core download --path=/tmp/wordpress --version=7.0.2
+          wp config create --path=/tmp/wordpress --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=127.0.0.1:3306
+          wp core install --path=/tmp/wordpress --url=http://localhost --title=Tazkar --admin_user=admin --admin_password=password --admin_email=admin@example.com
+          wp plugin install "$GITHUB_WORKSPACE/dist/tazkar-0.1.0-alpha.1.zip" --path=/tmp/wordpress --activate
+          test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "1"
+          wp plugin deactivate tazkar --path=/tmp/wordpress
+          test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "1"
+          wp plugin activate tazkar --path=/tmp/wordpress

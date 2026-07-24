@@ -1,0 +1,12 @@
+parameters:
+    level: 5
+    paths:
+        - src
+        - tazkar.php
+        - uninstall.php
+    scanFiles:
+        - tests/phpstan-wordpress-stubs.php
+    excludePaths:
+        analyse:
+            - vendor
+    treatPhpDocTypesAsCertain: false
