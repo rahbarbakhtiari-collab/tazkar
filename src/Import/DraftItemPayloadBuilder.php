@@ -39,8 +39,8 @@ final class DraftItemPayloadBuilder {
 
 		$meta[ MetaRegistry::key( 'review_status' ) ] = $this->safe_review_status( $row['review_status'] ?? null );
 		$meta[ MetaRegistry::key( 'import_status' ) ] = 'imported';
-		$arabic = is_string( $row['arabic_text'] ?? null ) ? $row['arabic_text'] : '';
-		$meta[ MetaRegistry::ARABIC_HASH_KEY ] = hash( 'sha256', $arabic );
+		$arabic                                       = is_string( $row['arabic_text'] ?? null ) ? $row['arabic_text'] : '';
+		$meta[ MetaRegistry::ARABIC_HASH_KEY ]        = hash( 'sha256', $arabic );
 
 		$topics = $this->unique_terms(
 			array_merge(
@@ -48,7 +48,7 @@ final class DraftItemPayloadBuilder {
 				$this->split_terms( $row['secondary_topics'] ?? null )
 			)
 		);
-		$tags = $this->unique_terms( $this->split_terms( $row['tags'] ?? null ) );
+		$tags   = $this->unique_terms( $this->split_terms( $row['tags'] ?? null ) );
 
 		return new DraftItemPayload( $post_data, $meta, $topics, $tags );
 	}

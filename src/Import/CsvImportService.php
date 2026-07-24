@@ -239,7 +239,7 @@ final class CsvImportService {
 			return 'failed';
 		}
 
-		$errors = count(
+		$errors  = count(
 			array_filter(
 				$results,
 				static fn ( CsvImportRowResult $row ): bool => 'error' === $row->status()
@@ -266,7 +266,7 @@ final class CsvImportService {
 			return 'failed';
 		}
 
-		return $errors > 0 || $invalid > 0 ? 'completed_with_errors' : 'completed';
+		return 0 < $errors || 0 < $invalid ? 'completed_with_errors' : 'completed';
 	}
 
 	private function safe_filename( string $filename ): string {

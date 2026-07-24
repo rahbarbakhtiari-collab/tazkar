@@ -54,7 +54,7 @@ final class WordPressContentWriter implements ContentWriter {
 				static fn ( string $term ): bool => '' !== $term
 			)
 		);
-		$result = wp_set_object_terms(
+		$result    = wp_set_object_terms(
 			$post_id,
 			array_values( array_unique( $sanitized ) ),
 			$taxonomy,

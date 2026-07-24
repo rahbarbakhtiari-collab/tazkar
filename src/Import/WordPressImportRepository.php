@@ -25,9 +25,9 @@ final class WordPressImportRepository implements ImportRepository {
 				$checksum
 			)
 		);
-		$uuid = wp_generate_uuid4();
-		$now  = current_time( 'mysql', true );
-		$ok   = $wpdb->insert(
+		$uuid     = wp_generate_uuid4();
+		$now      = current_time( 'mysql', true );
+		$ok       = $wpdb->insert(
 			$tables['import_batches'],
 			array(
 				'batch_uuid'      => $uuid,
