@@ -67,7 +67,15 @@ try {
 }
 
 if ( 1 !== $first->imported_rows() || 2 !== $first->skipped_rows() || 1 !== $first->invalid_rows() ) {
-	$fail( 'Mixed CSV import counts are incorrect.' );
+	$fail(
+		sprintf(
+			'Mixed CSV import counts are incorrect: imported=%d skipped=%d invalid=%d errors=%d.',
+			$first->imported_rows(),
+			$first->skipped_rows(),
+			$first->invalid_rows(),
+			$first->error_rows()
+		)
+	);
 }
 if ( ! $second->repeated_source() || 0 !== $second->imported_rows() ) {
 	$fail( 'Repeated CSV did not suppress duplicate posts.' );
