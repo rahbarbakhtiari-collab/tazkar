@@ -19,7 +19,7 @@ final class PublicMetaAccess {
 	}
 
 	/**
-	 * Permit public reads for published items without weakening write checks.
+	 * Permit public reads only for published and approved items without weakening write checks.
 	 *
 	 * @param bool     $allowed  Existing authorization result.
 	 * @param string   $meta_key Registered meta key.
@@ -38,7 +38,11 @@ final class PublicMetaAccess {
 	): bool {
 		unset( $meta_key, $user_id, $caps );
 
-		if ( 'read_post_meta' === $cap && 'publish' === get_post_status( $post_id ) ) {
+		if (
+			'read_post_meta' === $cap
+			&& 'publish' === get_post_status( $post_id )
+			&& 'approved' === get_post_meta( $post_id, MetaRegistry::key( 'review_status' ), true )
+		) {
 			return true;
 		}
 
