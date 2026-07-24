@@ -53,7 +53,22 @@ jobs:
       - run: composer lint
       - run: composer test
       - run: php tests/activation-smoke.php
-      - run: vendor/bin/phpstan analyse
+      - name: Run PHPStan and retain diagnostics
+        id: phpstan
+        continue-on-error: true
+        run: vendor/bin/phpstan analyse --error-format=json > phpstan-report.json
+      - name: Upload PHPStan diagnostics
+        if: steps.phpstan.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpstan-report-${{ matrix.php }}
+          path: phpstan-report.json
+          retention-days: 7
+      - name: Enforce PHPStan
+        if: steps.phpstan.outcome == 'failure'
+        run: |
+          php -r '$report = json_decode(file_get_contents("phpstan-report.json"), true); foreach ($report["files"] as $file => $details) { foreach ($details["messages"] as $message) { printf("%s:%d %s [%s]\n", $file, $message["line"], $message["message"], $message["identifier"] ?? "phpstan"); } } foreach ($report["errors"] as $error) { echo $error, "\n"; }'
+          exit 1
       - run: vendor/bin/phpunit
       - run: composer build
       - uses: actions/upload-artifact@v4
