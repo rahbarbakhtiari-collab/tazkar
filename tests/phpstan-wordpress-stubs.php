@@ -39,6 +39,7 @@ function get_post_meta( $post_id, $key = '', $single = false ) { return ''; }
 function get_post_status( $post_id ) { return 'publish'; }
 function get_post_type( $post = null ) { return 'tazkar_item'; }
 function is_wp_error( $thing ) { return $thing instanceof WP_Error; }
+function metadata_exists( $meta_type, $object_id, $meta_key ) { return true; }
 function register_post_meta( $post_type, $meta_key, array $args ) {}
 function register_post_type( $post_type, $args = array() ) {}
 function register_taxonomy( $taxonomy, $object_type, $args = array() ) {}
