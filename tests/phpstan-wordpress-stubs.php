@@ -1,6 +1,6 @@
 <?php
 
-const ABSPATH = '/tmp/';
+const ABSPATH = __DIR__ . '/wordpress-stub/';
 
 class WP_Role {
     public function add_cap( string $capability ): void {}
