@@ -15,11 +15,11 @@ final class CsvPreviewServiceTest extends TestCase {
 	}
 
 	public function test_reordered_headers_are_mapped_and_validated_without_mutation(): void {
-		$row      = $this->fixture( 'valid-quran.json' );
-		$headers  = array_reverse( ContractSchema::columns() );
-		$values   = array_map( static fn ( string $header ) => $row[ $header ] ?? '', $headers );
-		$path     = $this->write_csv( $headers, array( $values ) );
-		$result   = ( new CsvPreviewService() )->preview( $path, "../unsafe\0-name.csv" );
+		$row       = $this->fixture( 'valid-quran.json' );
+		$headers   = array_reverse( ContractSchema::columns() );
+		$values    = array_map( static fn ( string $header ) => $row[ $header ] ?? '', $headers );
+		$path      = $this->write_csv( $headers, array( $values ) );
+		$result    = ( new CsvPreviewService() )->preview( $path, "..\\windows\\unsafe\0-name.csv" );
 		$validated = $result->validation()->rows()[0];
 
 		self::assertTrue( $result->is_valid() );
@@ -30,13 +30,13 @@ final class CsvPreviewServiceTest extends TestCase {
 	}
 
 	public function test_parse_issues_are_merged_with_contract_issues(): void {
-		$row                       = $this->fixture( 'valid-hadith.json' );
-		$row['generated_title']    = '@formula-like';
-		$headers                   = ContractSchema::columns();
-		$values                    = array_map( static fn ( string $header ) => $row[ $header ] ?? '', $headers );
-		$values[]                  = 'extra-cell';
-		$result                    = ( new CsvPreviewService() )->preview( $this->write_csv( $headers, array( $values ) ), 'test.csv' );
-		$codes                     = array_map( static fn ( $issue ): string => $issue->code(), $result->validation()->rows()[0]->issues() );
+		$row                    = $this->fixture( 'valid-hadith.json' );
+		$row['generated_title'] = '@formula-like';
+		$headers                = ContractSchema::columns();
+		$values                 = array_map( static fn ( string $header ) => $row[ $header ] ?? '', $headers );
+		$values[]               = 'extra-cell';
+		$result                 = ( new CsvPreviewService() )->preview( $this->write_csv( $headers, array( $values ) ), 'test.csv' );
+		$codes                  = array_map( static fn ( $issue ): string => $issue->code(), $result->validation()->rows()[0]->issues() );
 
 		self::assertFalse( $result->is_valid() );
 		self::assertContains( CsvIssueCode::ROW_WIDTH_MISMATCH, $codes );
@@ -56,14 +56,14 @@ final class CsvPreviewServiceTest extends TestCase {
 	}
 
 	/**
-	 * @param string[] $headers CSV headers.
-	 * @param array<int, array<int, scalar|null>> $rows CSV rows.
+	 * @param string[]                              $headers CSV headers.
+	 * @param array<int, array<int, scalar|null>> $rows    CSV rows.
 	 */
 	private function write_csv( array $headers, array $rows ): string {
 		$path = tempnam( sys_get_temp_dir(), 'tazkar-preview-' );
 		self::assertIsString( $path );
 		$this->temporary_file = $path;
-		$handle = fopen( $path, 'wb' );
+		$handle               = fopen( $path, 'wb' );
 		self::assertIsResource( $handle );
 		fputcsv( $handle, $headers, ',', '"', '' );
 		foreach ( $rows as $row ) {
