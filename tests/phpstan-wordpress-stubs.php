@@ -23,6 +23,7 @@ function add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 )
 function absint( $maybeint ) { return abs( (int) $maybeint ); }
 function delete_post_meta( $post_id, $meta_key, $meta_value = '' ) {}
 function get_post_meta( $post_id, $key = '', $single = false ) { return ''; }
+function get_post_status( $post_id ) { return 'publish'; }
 function get_post_type( $post = null ) { return 'tazkar_item'; }
 function register_post_meta( $post_type, $meta_key, array $args ) {}
 function register_post_type( $post_type, $args = array() ) {}
