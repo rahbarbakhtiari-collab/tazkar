@@ -19,9 +19,13 @@ final class CsvPreviewPage {
 	private const NONCE_NAME   = 'tazkar_csv_preview_nonce';
 	private const FILE_FIELD   = 'tazkar_csv_file';
 
+	/**
+	 * @param (\Closure(string): string)|null $mime_detector Optional MIME detector for testing.
+	 */
 	public function __construct(
 		private readonly CsvPreviewService $preview_service = new CsvPreviewService(),
-		private readonly UploadedCsvValidator $upload_validator = new UploadedCsvValidator()
+		private readonly UploadedCsvValidator $upload_validator = new UploadedCsvValidator(),
+		private readonly ?\Closure $mime_detector = null
 	) {}
 
 	public function register(): void {
@@ -63,18 +67,21 @@ final class CsvPreviewPage {
 	 * @param array<string, mixed> $file Raw upload metadata.
 	 */
 	private function process_request( array $file ): CsvPreviewResult {
-		$path   = is_string( $file['tmp_name'] ?? null ) ? $file['tmp_name'] : '';
-		$mime   = $this->detect_mime( $path );
-		$upload = $this->upload_validator->validate(
-			$file,
-			'' !== $path && is_uploaded_file( $path ),
-			$mime
-		);
+		$path        = is_string( $file['tmp_name'] ?? null ) ? $file['tmp_name'] : '';
+		$is_uploaded = '' !== $path && is_uploaded_file( $path );
+		$mime        = $is_uploaded ? $this->detect_mime( $path ) : '';
+		$upload      = $this->upload_validator->validate( $file, $is_uploaded, $mime );
 
 		return $this->preview_service->preview( $upload->path(), $upload->name() );
 	}
 
 	private function detect_mime( string $path ): string {
+		if ( null !== $this->mime_detector ) {
+			$mime = ( $this->mime_detector )( $path );
+
+			return strtolower( $mime );
+		}
+
 		if ( '' === $path || ! is_readable( $path ) ) {
 			return '';
 		}
