@@ -2,6 +2,8 @@
 
 use PHPUnit\Framework\TestCase;
 use Tazkar\Admin\CsvPreviewPage;
+use Tazkar\Import\CsvPreviewService;
+use Tazkar\Import\UploadedCsvValidator;
 
 final class CsvPreviewPageSecurityTest extends TestCase {
 	protected function tearDown(): void {
@@ -32,5 +34,41 @@ final class CsvPreviewPageSecurityTest extends TestCase {
 			array( 'tazkar_csv_preview', 'tazkar_csv_preview_nonce' ),
 			$GLOBALS['tazkar_test_nonce_action']
 		);
+	}
+
+	public function test_mime_is_not_detected_before_http_upload_origin_is_proven(): void {
+		$path = tempnam( sys_get_temp_dir(), 'tazkar-not-uploaded-' );
+		self::assertIsString( $path );
+		file_put_contents( $path, "schema_version,record_id\n1.1,test\n" );
+
+		$mime_detector_called = false;
+		$page                 = new CsvPreviewPage(
+			new CsvPreviewService(),
+			new UploadedCsvValidator(),
+			static function ( string $candidate_path ) use ( &$mime_detector_called ): string {
+				unset( $candidate_path );
+				$mime_detector_called = true;
+
+				return 'text/csv';
+			}
+		);
+
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_FILES                    = array(
+			'tazkar_csv_file' => array(
+				'name'     => 'test.csv',
+				'tmp_name' => $path,
+				'error'    => UPLOAD_ERR_OK,
+				'size'     => filesize( $path ),
+				'type'     => 'text/csv',
+			),
+		);
+
+		ob_start();
+		$page->render();
+		ob_end_clean();
+		@unlink( $path );
+
+		self::assertFalse( $mime_detector_called );
 	}
 }
