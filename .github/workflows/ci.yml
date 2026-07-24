@@ -28,7 +28,23 @@ jobs:
           tools: composer:v2
       - run: composer validate --strict
       - run: composer install --no-interaction --prefer-dist --no-progress --quiet
-      - run: vendor/bin/phpcs --report=full
+      - name: Run PHPCS and capture report
+        shell: bash
+        run: |
+          set +e
+          vendor/bin/phpcs --report=json > phpcs-report.json
+          code=$?
+          echo "$code" > phpcs-exit-code
+          exit 0
+      - uses: actions/upload-artifact@v4
+        if: matrix.php == '8.3'
+        with:
+          name: phpcs-report
+          path: |
+            phpcs-report.json
+            phpcs-exit-code
+      - name: Enforce PHPCS result
+        run: test "$(cat phpcs-exit-code)" = "0"
       - run: composer audit --no-interaction --format=plain
       - run: python3 scripts/scan_secrets.py
       - run: composer lint
