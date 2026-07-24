@@ -115,3 +115,4 @@ jobs:
           test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "1"
           wp plugin activate tazkar --path=/tmp/wordpress
           wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-content-model-smoke.php" --path=/tmp/wordpress
+          wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-csv-preview-smoke.php" --path=/tmp/wordpress

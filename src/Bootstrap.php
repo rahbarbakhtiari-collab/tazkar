@@ -2,6 +2,7 @@
 
 namespace Tazkar;
 
+use Tazkar\Admin\CsvPreviewPage;
 use Tazkar\Admin\StatusPage;
 use Tazkar\Content\ContentType;
 use Tazkar\Content\MetaRegistry;
@@ -54,6 +55,7 @@ final class Bootstrap {
 
 		if ( is_admin() ) {
 			( new StatusPage() )->register();
+			( new CsvPreviewPage() )->register();
 		}
 	}
 }
