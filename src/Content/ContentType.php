@@ -29,8 +29,9 @@ final class ContentType {
 			'show_in_rest'        => true,
 			'has_archive'         => true,
 			'rewrite'             => array( 'slug' => 'reminders' ),
-			'supports'            => array( 'title', 'author', 'revisions' ),
+			'supports'            => array( 'title', 'author', 'revisions', 'custom-fields' ),
 			'exclude_from_search' => false,
+			'capability_type'     => array( 'tazkar_item', 'tazkar_items' ),
 			'map_meta_cap'        => true,
 			'capabilities'        => self::capabilities(),
 		);
@@ -41,9 +42,9 @@ final class ContentType {
 	 */
 	private static function capabilities(): array {
 		return array(
-			'edit_post'              => 'manage_tazkar',
-			'read_post'              => 'manage_tazkar',
-			'delete_post'            => 'manage_tazkar',
+			'edit_post'              => 'edit_tazkar_item',
+			'read_post'              => 'read_tazkar_item',
+			'delete_post'            => 'delete_tazkar_item',
 			'edit_posts'             => 'manage_tazkar',
 			'edit_others_posts'      => 'manage_tazkar',
 			'publish_posts'          => 'publish_tazkar_items',
