@@ -4,7 +4,7 @@ Tags: quran, hadith, islamic, reflection, rtl
 Requires at least: 6.8
 Tested up to: 7.0.2
 Requires PHP: 8.1
-Stable tag: 0.4.0-alpha.1
+Stable tag: 0.5.0-alpha.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,15 +12,18 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
 
-این نسخه پیش‌نمایش امن و غیرماندگار CSV را به validator قرارداد داده ۱٫۱ متصل می‌کند. هنوز هیچ نوشته یا بسته درون‌ریز ساخته نمی‌شود.
+این نسخه ورود امن CSV را اضافه می‌کند؛ فقط ردیف‌های معتبر به‌صورت پیش‌نویس ساخته و نتیجه همه ردیف‌ها در بسته درون‌ریز ثبت می‌شود.
 
 == Installation ==
 
 1. فایل ZIP را از بخش افزونه‌ها نصب کنید.
 2. افزونه را برای هر سایت جداگانه فعال کنید.
-3. از منوی «تذکار ← پیش‌نمایش CSV» فایل را بررسی کنید.
+3. از منوی «تذکار ← CSV» ابتدا پیش‌نمایش بگیرید و سپس ورود به‌صورت پیش‌نویس را اجرا کنید.
 
 == Changelog ==
+
+= 0.5.0-alpha.1 =
+* افزودن ورود CSV به Draft، ثبت batch/row، کنترل duplicate و گزارش ردیف‌محور بدون انتشار یا تأیید خودکار.
 
 = 0.4.0-alpha.1 =
 * افزودن خواندن امن CSV، محدودیت منابع، گزارش ردیف‌محور و صفحه پیش‌نمایش مدیریت بدون persistence.
