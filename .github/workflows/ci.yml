@@ -60,7 +60,23 @@ jobs:
       - run: composer lint
       - run: composer test
       - run: php tests/activation-smoke.php
-      - run: vendor/bin/phpstan analyse
+      - name: Run PHPStan and capture report
+        shell: bash
+        run: |
+          set +e
+          vendor/bin/phpstan analyse --error-format=json > phpstan-report.json
+          code=$?
+          echo "$code" > phpstan-exit-code
+          exit 0
+      - uses: actions/upload-artifact@v4
+        if: matrix.php == '8.3'
+        with:
+          name: phpstan-diagnostics
+          path: |
+            phpstan-report.json
+            phpstan-exit-code
+      - name: Enforce PHPStan result
+        run: test "$(cat phpstan-exit-code)" = "0"
       - run: vendor/bin/phpunit
       - run: composer build
       - uses: actions/upload-artifact@v4
