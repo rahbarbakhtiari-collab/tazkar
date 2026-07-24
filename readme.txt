@@ -4,7 +4,7 @@ Tags: quran, hadith, islamic, reflection, rtl
 Requires at least: 6.8
 Tested up to: 7.0.2
 Requires PHP: 8.1
-Stable tag: 0.2.0-alpha.1
+Stable tag: 0.3.0-alpha.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
 
-این نسخه مدل محتوای Sprint 1 را اضافه می‌کند و هنوز قابلیت ورود محتوا یا نمایش عمومی ندارد.
+این نسخه validator مستقل قرارداد داده ۱٫۱ را اضافه می‌کند و هنوز فایل CSV/XLSX را نمی‌خواند.
 
 == Installation ==
 
@@ -21,6 +21,9 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 3. از منوی «تذکار» وضعیت زیرساخت را بررسی کنید.
 
 == Changelog ==
+
+= 0.3.0-alpha.1 =
+* افزودن validator مستقل قرارداد داده، کدهای خطای ثابت، هشدارها و اعتبارسنجی batch.
 
 = 0.2.0-alpha.1 =
 * ثبت CPT، taxonomyها، metaهای قرارداد داده، hash عربی و محافظ تغییر حساس.

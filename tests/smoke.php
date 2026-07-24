@@ -34,10 +34,12 @@ $assert(
     4 === count( Tazkar\Infrastructure\Database\Schema::create_statements( 'wp_', 'DEFAULT CHARACTER SET utf8mb4' ) ),
     'Four schema statements are expected.'
 );
+$assert( 35 === count( Tazkar\Validation\ContractSchema::columns() ), 'Data contract must define thirty-five columns.' );
+$assert( '1.1' === Tazkar\Validation\ContractSchema::VERSION, 'Data contract version must remain 1.1.' );
 
 if ( array() !== $failures ) {
     fwrite( STDERR, implode( PHP_EOL, $failures ) . PHP_EOL );
     exit( 1 );
 }
 
-echo "Tazkar Sprint 1 smoke tests passed.\n";
+echo "Tazkar Sprint 2 smoke tests passed.\n";

@@ -1,57 +1,55 @@
 # وضعیت پروژه تذکار
 
 **شناسه سند:** `docs/management/project-status.md`  
-**نسخه:** ۱٫۳  
+**نسخه:** ۱٫۴  
 **تاریخ:** ۲۰۲۶/۰۷/۲۴  
 **وضعیت:** فعال  
-**مرحله فعلی:** اجرای خودکار Sprint 1 — مدل محتوا
+**مرحله فعلی:** اجرای خودکار Sprint 2 — validator قرارداد داده
 
 ---
 
 ## خلاصه
 
 - مخزن خصوصی `rahbarbakhtiari-collab/tazkar` منبع حقیقت کد و CI است.
-- Sprint صفر با CI واقعی، WordPress 7.0.2، MySQL و یک نصب موفق Local پایان یافته است.
+- Sprint صفر و Sprint 1 با CI واقعی و auto-merge پایان یافته‌اند.
+- نسخه پایدار توسعه Sprint 1 برابر `0.2.0-alpha.1` است.
+- Issue شماره ۹، validator مستقل قرارداد داده ۱٫۱ را اجرا می‌کند.
+- نسخه نامزد Sprint 2 برابر `0.3.0-alpha.1` است.
 - تست انسانی مرحله‌ای تا Release Candidate متوقف است.
-- Issue شماره ۴، مدل محتوای Sprint 1 را اجرا می‌کند.
-- نسخه نامزد Sprint 1 برابر `0.2.0-alpha.1` است.
 
-## خروجی پایدار Sprint صفر
+## خروجی پایدار Sprint 1
 
-- Bootstrap و autoload؛
-- بررسی WordPress 6.8+ و PHP 8.1+؛
-- capabilityهای پایه؛
-- migration نسخه‌دار و چهار جدول عملیاتی؛
-- صفحه وضعیت مدیریت؛
-- build قطعی ZIP و checksum؛
-- PHPCS، PHPStan، PHPUnit و GitHub Actions؛
-- نصب، فعال‌سازی، غیرفعال‌سازی و فعال‌سازی مجدد روی WordPress/MySQL.
-
-## کار جاری Sprint 1
-
-- ثبت CPT `tazkar_item`؛
-- ثبت taxonomyهای `tazkar_topic` و `tazkar_tag`؛
-- ثبت ۲۹ meta متناظر با قرارداد داده ۱٫۱؛
-- allowlist صریح REST؛
+- CPT `tazkar_item` و taxonomyها؛
+- ۲۹ meta قرارداد داده؛
+- allowlist عمومی REST؛
 - حفظ عین متن عربی و SHA-256 داخلی؛
-- بازگرداندن `approved` به `needs_recheck` پس از تغییر فیلد حساس؛
-- آزمون واحد و smoke واقعی WordPress/MySQL.
+- تغییر فیلد حساس: `needs_recheck` و بازگشت خودکار به Draft؛
+- آزمون واقعی WordPress 7.0.2 و MySQL.
 
-## دروازه پایان Sprint 1
+## کار جاری Sprint 2
 
-Sprint 1 فقط پس از این موارد Done است:
+- validator خالص PHP بدون تابع WordPress؛
+- schema دقیق ۳۵ ستون؛
+- اعتبارسنجی header، row و batch؛
+- قواعد قرآن و حدیث؛
+- خطا و هشدار با کد ثابت؛
+- fixtureهای معتبر و نامعتبر؛
+- حفظ عین داده ورودی.
+
+## دروازه پایان Sprint 2
 
 - PR Policy سبز؛
 - PHP 8.1، 8.3، 8.4 و 8.5 سبز؛
 - PHPCS، PHPStan و PHPUnit سبز؛
-- آزمون WordPress/MySQL مدل محتوا سبز؛
-- ZIP نسخه `0.2.0-alpha.1` ساخته شود؛
-- PR با `automerge` بدون تصمیم انسانی ادغام شود؛
-- Issue شماره ۴ با گزارش `PASS` بسته شود.
+- تمام fixtureها و خانواده‌های خطا/هشدار سبز؛
+- آزمون WordPress/MySQL Sprint 1 همچنان سبز؛
+- ZIP نسخه `0.3.0-alpha.1` ساخته شود؛
+- PR با `automerge` ادغام شود؛
+- Issue شماره ۹ با `PASS` بسته شود.
 
 ## مرحله بعد
 
-پس از پایان Sprint 1، Sprint 2 به validator مستقل قرارداد داده ۱٫۱ اختصاص دارد. درون‌ریز CSV هنوز آغاز نمی‌شود.
+پس از Sprint 2، Sprint 3 فقط پیش‌نمایش CSV و گزارش ردیف‌محور را می‌سازد. ساخت post در Sprint 3 خارج از محدوده است.
 
 ## سیاست انسانی
 
