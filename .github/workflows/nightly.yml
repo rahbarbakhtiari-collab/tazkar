@@ -1,0 +1,64 @@
+name: Nightly Regression
+
+on:
+  schedule:
+    - cron: '20 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2, wp-cli
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer audit --no-interaction
+      - run: composer lint
+      - run: vendor/bin/phpcs
+      - run: vendor/bin/phpstan analyse
+      - run: vendor/bin/phpunit
+      - run: composer build
+      - name: Verify reproducible build
+        run: |
+          first=$(sha256sum dist/tazkar-*.zip | awk '{print $1}')
+          rm -rf dist
+          composer build
+          second=$(sha256sum dist/tazkar-*.zip | awk '{print $1}')
+          test "$first" = "$second"
+      - name: Install latest WordPress and activate artifact
+        run: |
+          mkdir -p /tmp/wordpress
+          wp core download --path=/tmp/wordpress
+          wp config create --path=/tmp/wordpress --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=127.0.0.1:3306
+          wp core install --path=/tmp/wordpress --url=http://localhost --title=Tazkar --admin_user=admin --admin_password=password --admin_email=admin@example.com
+          zip=$(find "$GITHUB_WORKSPACE/dist" -name 'tazkar-*.zip' -type f | head -n 1)
+          wp plugin install "$zip" --path=/tmp/wordpress --activate
+          wp plugin deactivate tazkar --path=/tmp/wordpress
+          wp plugin activate tazkar --path=/tmp/wordpress
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nightly-tazkar-plugin
+          path: dist/tazkar-*.zip*
+          retention-days: 14

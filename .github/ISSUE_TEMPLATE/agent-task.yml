@@ -1,0 +1,59 @@
+name: Agent task
+description: A scoped task that agents can implement and test without intermediate human review.
+title: "[Agent] "
+labels:
+  - agent-ready
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: One verifiable outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List 3–8 executable or objectively verifiable criteria.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Required tests
+      description: Commands, scenarios, fixtures, and negative cases.
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Automation risk
+      options:
+        - low
+        - medium
+        - high
+    validations:
+      required: true
+  - type: dropdown
+    id: human
+    attributes:
+      label: Human decision required
+      options:
+        - "no"
+        - "yes"
+    validations:
+      required: true
+  - type: textarea
+    id: documents
+    attributes:
+      label: Authoritative documents
+      description: Exact repository paths that define the behavior.
+    validations:
+      required: true
