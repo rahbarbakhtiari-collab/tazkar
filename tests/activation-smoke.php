@@ -75,7 +75,7 @@ call_user_func( $GLOBALS['activation_hook'], false );
 $checks = array(
     8 === count( $GLOBALS['tazkar_test_sql'] ),
     '1' === (string) ( $GLOBALS['tazkar_options']['tazkar_db_version'] ?? '' ),
-    '0.4.0-alpha.1' === (string) ( $GLOBALS['tazkar_options']['tazkar_version'] ?? '' ),
+    '0.5.0-alpha.1' === (string) ( $GLOBALS['tazkar_options']['tazkar_version'] ?? '' ),
     7 === count( $GLOBALS['tazkar_caps'] ),
     false !== strpos( $GLOBALS['tazkar_test_sql'][0] ?? '', 'custom_tazkar_import_batches' ),
     false !== strpos( $GLOBALS['tazkar_test_sql'][3] ?? '', 'custom_tazkar_favorites' ),
