@@ -1,6 +1,6 @@
 <?php
 
-define( 'ABSPATH', '/tmp/wordpress/' );
+define( 'ABSPATH', __DIR__ . '/phpstan-wordpress/' );
 
 class WP_Role {
     public function add_cap( string $capability ): void {}
