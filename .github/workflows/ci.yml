@@ -78,8 +78,10 @@ jobs:
           wp core download --path=/tmp/wordpress --version=7.0.2
           wp config create --path=/tmp/wordpress --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=127.0.0.1:3306
           wp core install --path=/tmp/wordpress --url=http://localhost --title=Tazkar --admin_user=admin --admin_password=password --admin_email=admin@example.com
-          wp plugin install "$GITHUB_WORKSPACE/dist/tazkar-0.1.0-alpha.1.zip" --path=/tmp/wordpress --activate
+          zip=$(find "$GITHUB_WORKSPACE/dist" -name 'tazkar-*.zip' -type f | head -n 1)
+          wp plugin install "$zip" --path=/tmp/wordpress --activate
           test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "1"
           wp plugin deactivate tazkar --path=/tmp/wordpress
           test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "1"
           wp plugin activate tazkar --path=/tmp/wordpress
+          wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-content-model-smoke.php" --path=/tmp/wordpress

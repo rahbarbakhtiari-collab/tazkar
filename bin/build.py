@@ -6,7 +6,10 @@ import shutil
 
 root = Path(__file__).resolve().parents[1]
 dist = root / 'dist'
-output = dist / 'tazkar-0.1.0-alpha.1.zip'
+plugin_file = (root / 'tazkar.php').read_text(encoding='utf-8')
+version_line = next(line for line in plugin_file.splitlines() if line.startswith("define( 'TAZKAR_VERSION'"))
+version = version_line.split("'")[3]
+output = dist / f'tazkar-{version}.zip'
 
 exclude_parts = {
     '.git', '.github', '.phpunit.cache', 'bin', 'dist', 'tests', 'vendor'

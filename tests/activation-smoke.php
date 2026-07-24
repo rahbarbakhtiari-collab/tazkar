@@ -16,12 +16,12 @@ PHP
 
 define( 'ABSPATH', $stub_root );
 
-$GLOBALS['wp_version']       = '7.0.2';
-$GLOBALS['tazkar_test_sql']  = array();
-$GLOBALS['tazkar_options']   = array();
-$GLOBALS['tazkar_actions']   = array();
-$GLOBALS['tazkar_caps']      = array();
-$GLOBALS['activation_hook']  = null;
+$GLOBALS['wp_version']        = '7.0.2';
+$GLOBALS['tazkar_test_sql']   = array();
+$GLOBALS['tazkar_options']    = array();
+$GLOBALS['tazkar_actions']    = array();
+$GLOBALS['tazkar_caps']       = array();
+$GLOBALS['activation_hook']   = null;
 $GLOBALS['deactivation_hook'] = null;
 
 class Tazkar_Test_Role {
@@ -73,9 +73,9 @@ call_user_func( $GLOBALS['activation_hook'], false );
 call_user_func( $GLOBALS['activation_hook'], false );
 
 $checks = array(
-    8 === count( $GLOBALS['tazkar_test_sql'] ), // Four idempotent dbDelta statements per activation.
+    8 === count( $GLOBALS['tazkar_test_sql'] ),
     '1' === (string) ( $GLOBALS['tazkar_options']['tazkar_db_version'] ?? '' ),
-    '0.1.0-alpha.1' === (string) ( $GLOBALS['tazkar_options']['tazkar_version'] ?? '' ),
+    '0.2.0-alpha.1' === (string) ( $GLOBALS['tazkar_options']['tazkar_version'] ?? '' ),
     7 === count( $GLOBALS['tazkar_caps'] ),
     false !== strpos( $GLOBALS['tazkar_test_sql'][0] ?? '', 'custom_tazkar_import_batches' ),
     false !== strpos( $GLOBALS['tazkar_test_sql'][3] ?? '', 'custom_tazkar_favorites' ),

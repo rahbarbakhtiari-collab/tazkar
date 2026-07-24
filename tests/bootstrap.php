@@ -8,3 +8,35 @@ define( 'TAZKAR_DB_VERSION', '1' );
 require_once dirname( __DIR__ ) . '/src/Autoloader.php';
 
 Tazkar\Autoloader::register( dirname( __DIR__ ) . '/src/' );
+
+if ( ! function_exists( '__' ) ) {
+    function __( $text, $domain = 'default' ) {
+        unset( $domain );
+        return $text;
+    }
+}
+
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+    function sanitize_text_field( $value ) {
+        return (string) $value;
+    }
+}
+
+if ( ! function_exists( 'sanitize_textarea_field' ) ) {
+    function sanitize_textarea_field( $value ) {
+        return (string) $value;
+    }
+}
+
+if ( ! function_exists( 'absint' ) ) {
+    function absint( $value ) {
+        return abs( (int) $value );
+    }
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+    function current_user_can( $capability, ...$args ) {
+        unset( $capability, $args );
+        return true;
+    }
+}

@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Tazkar – Quran & Hadith Reflections
  * Description:       زیرساخت افزونه تذکار برای مدیریت تلنگرهای قرآن و حدیث.
- * Version:           0.1.0-alpha.1
+ * Version:           0.2.0-alpha.1
  * Requires at least: 6.8
  * Requires PHP:      8.1
  * Author:            Tazkar Project
@@ -14,22 +14,22 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+    exit;
 }
 
 if ( version_compare( PHP_VERSION, '8.1', '<' ) ) {
-	add_action(
-		'admin_notices',
-		static function () {
-			echo '<div class="notice notice-error"><p>';
-			echo esc_html__( 'افزونه تذکار به PHP 8.1 یا بالاتر نیاز دارد.', 'tazkar' );
-			echo '</p></div>';
-		}
-	);
-	return;
+    add_action(
+        'admin_notices',
+        static function () {
+            echo '<div class="notice notice-error"><p>';
+            echo esc_html__( 'افزونه تذکار به PHP 8.1 یا بالاتر نیاز دارد.', 'tazkar' );
+            echo '</p></div>';
+        }
+    );
+    return;
 }
 
-define( 'TAZKAR_VERSION', '0.1.0-alpha.1' );
+define( 'TAZKAR_VERSION', '0.2.0-alpha.1' );
 define( 'TAZKAR_DB_VERSION', '1' );
 define( 'TAZKAR_MIN_WP_VERSION', '6.8' );
 define( 'TAZKAR_MIN_PHP_VERSION', '8.1' );
@@ -45,13 +45,13 @@ register_activation_hook( __FILE__, array( Tazkar\Core\Activator::class, 'activa
 register_deactivation_hook( __FILE__, array( Tazkar\Core\Deactivator::class, 'deactivate' ) );
 
 add_action(
-	'plugins_loaded',
-	static function () {
-		if ( ! Tazkar\Core\Requirements::is_met() ) {
-			Tazkar\Core\Requirements::register_admin_notice();
-			return;
-		}
+    'plugins_loaded',
+    static function () {
+        if ( ! Tazkar\Core\Requirements::is_met() ) {
+            Tazkar\Core\Requirements::register_admin_notice();
+            return;
+        }
 
-		Tazkar\Bootstrap::instance()->register();
-	}
+        Tazkar\Bootstrap::instance()->register();
+    }
 );

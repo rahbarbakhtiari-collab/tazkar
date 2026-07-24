@@ -25,6 +25,11 @@ $assert(
     'site42_tazkar_feedback' === Tazkar\Infrastructure\Database\Schema::table_names( 'site42_' )['feedback'],
     'Custom database prefixes must be respected.'
 );
+$assert( 'tazkar_item' === Tazkar\Content\ContentType::POST_TYPE, 'Content post type identifier must remain stable.' );
+$assert(
+    29 === count( Tazkar\Content\MetaRegistry::definitions() ),
+    'Twenty-nine persistent meta fields are expected.'
+);
 $assert(
     4 === count( Tazkar\Infrastructure\Database\Schema::create_statements( 'wp_', 'DEFAULT CHARACTER SET utf8mb4' ) ),
     'Four schema statements are expected.'
@@ -35,4 +40,4 @@ if ( array() !== $failures ) {
     exit( 1 );
 }
 
-echo "Tazkar Sprint 0 smoke tests passed.\n";
+echo "Tazkar Sprint 1 smoke tests passed.\n";
