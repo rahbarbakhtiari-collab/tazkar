@@ -26,9 +26,7 @@ final class WordPressContentWriter implements ContentWriter {
 
 		try {
 			foreach ( $payload->meta() as $key => $value ) {
-				if ( false === update_post_meta( $post_id, $key, $value ) ) {
-					throw new RuntimeException( 'Post meta could not be stored.' );
-				}
+				$this->store_meta( $post_id, $key, $value );
 			}
 			$this->assign_terms( $post_id, Taxonomies::TOPIC, $payload->topics() );
 			$this->assign_terms( $post_id, Taxonomies::TAG, $payload->tags() );
@@ -44,6 +42,25 @@ final class WordPressContentWriter implements ContentWriter {
 		if ( $post_id > 0 ) {
 			wp_delete_post( $post_id, true );
 		}
+	}
+
+	/** @param mixed $value Exact desired metadata value. */
+	private function store_meta( int $post_id, string $key, $value ): void {
+		$result = update_post_meta( $post_id, $key, $value );
+		if ( false !== $result ) {
+			return;
+		}
+
+		if ( ! metadata_exists( 'post', $post_id, $key ) ) {
+			throw new RuntimeException( 'Post meta could not be stored.' );
+		}
+
+		$stored = get_post_meta( $post_id, $key, true );
+		if ( is_scalar( $stored ) && is_scalar( $value ) && (string) $stored === (string) $value ) {
+			return;
+		}
+
+		throw new RuntimeException( 'Post meta could not be stored.' );
 	}
 
 	/** @param string[] $terms Term names. */
