@@ -11,13 +11,13 @@ final class BatchValidationResult {
 		private readonly array $rows
 	) {}
 
-	public function isValid(): bool {
-		if ( ! $this->headers->isValid() ) {
+	public function is_valid(): bool {
+		if ( ! $this->headers->is_valid() ) {
 			return false;
 		}
 
 		foreach ( $this->rows as $row ) {
-			if ( ! $row->isValid() ) {
+			if ( ! $row->is_valid() ) {
 				return false;
 			}
 		}

@@ -21,7 +21,7 @@ final class HeaderValidator {
 			}
 		}
 
-		foreach ( ContractSchema::requiredHeaders() as $required ) {
+		foreach ( ContractSchema::required_headers() as $required ) {
 			if ( ! in_array( $required, $headers, true ) ) {
 				$result->error(
 					IssueCode::HEADER_MISSING_REQUIRED,

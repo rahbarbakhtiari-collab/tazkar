@@ -13,20 +13,20 @@ final class UnicodeText {
 		return false === $count ? strlen( $value ) : $count;
 	}
 
-	public static function containsHtml( string $value ): bool {
+	public static function contains_html( string $value ): bool {
 		return strip_tags( $value ) !== $value;
 	}
 
-	public static function containsNewline( string $value ): bool {
+	public static function contains_newline( string $value ): bool {
 		return 1 === preg_match( '/\R/u', $value );
 	}
 
-	public static function containsEmojiOrHashtag( string $value ): bool {
+	public static function contains_emoji_or_hashtag( string $value ): bool {
 		return str_contains( $value, '#' )
 			|| 1 === preg_match( '/[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]/u', $value );
 	}
 
-	public static function sentenceCount( string $value ): int {
+	public static function sentence_count( string $value ): int {
 		$parts = preg_split( '/[.!؟?]+/u', trim( $value ), -1, PREG_SPLIT_NO_EMPTY );
 
 		return false === $parts ? 0 : count( $parts );

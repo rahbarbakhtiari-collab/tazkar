@@ -54,7 +54,7 @@ final class ValidationResult {
 		);
 	}
 
-	public function isValid(): bool {
+	public function is_valid(): bool {
 		return array() === $this->errors();
 	}
 
@@ -96,7 +96,7 @@ final class ValidationResult {
 		return $this->row;
 	}
 
-	public function rowNumber(): ?int {
+	public function row_number(): ?int {
 		return $this->row_number;
 	}
 }

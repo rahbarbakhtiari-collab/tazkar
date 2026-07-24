@@ -31,7 +31,7 @@ final class ValidationIssue {
 		return $this->message;
 	}
 
-	public function rowNumber(): ?int {
+	public function row_number(): ?int {
 		return $this->row_number;
 	}
 
@@ -45,7 +45,7 @@ final class ValidationIssue {
 	/**
 	 * @return array<string, mixed>
 	 */
-	public function toArray(): array {
+	public function to_array(): array {
 		return array(
 			'code'       => $this->code,
 			'severity'   => $this->severity->value,

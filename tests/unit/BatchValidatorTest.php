@@ -14,13 +14,13 @@ final class BatchValidatorTest extends TestCase {
         $result               = ( new BatchValidator() )->validate( ContractSchema::columns(), array( $first, $second ) );
         $row_results          = $result->rows();
 
-        self::assertFalse( $result->isValid() );
+        self::assertFalse( $result->is_valid() );
         foreach ( $row_results as $row_result ) {
             $codes = array_map( static fn ( $issue ): string => $issue->code(), $row_result->errors() );
             self::assertContains( IssueCode::DUPLICATE_RECORD_ID, $codes );
         }
-        self::assertSame( 2, $row_results[0]->rowNumber() );
-        self::assertSame( 3, $row_results[1]->rowNumber() );
+        self::assertSame( 2, $row_results[0]->row_number() );
+        self::assertSame( 3, $row_results[1]->row_number() );
     }
 
     /**

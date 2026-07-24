@@ -53,7 +53,7 @@ final class ContractSchema {
 	 *
 	 * @return string[]
 	 */
-	public static function requiredHeaders(): array {
+	public static function required_headers(): array {
 		return array(
 			'schema_version',
 			'record_id',
@@ -90,7 +90,7 @@ final class ContractSchema {
 	/**
 	 * @return string[]
 	 */
-	public static function requiredValues(): array {
+	public static function required_values(): array {
 		return array(
 			'schema_version',
 			'record_id',
@@ -140,22 +140,22 @@ final class ContractSchema {
 	/**
 	 * @return array<string, int>
 	 */
-	public static function maximumLengths(): array {
+	public static function maximum_lengths(): array {
 		return array(
-			'record_id'        => 64,
-			'batch_id'         => 64,
-			'book_title'       => 200,
-			'generated_title'  => 80,
+			'record_id'         => 64,
+			'batch_id'          => 64,
+			'book_title'        => 200,
+			'generated_title'   => 80,
 			'motivational_text' => 280,
-			'suggested_slug'   => 100,
-			'reviewer_notes'   => 1000,
+			'suggested_slug'    => 100,
+			'reviewer_notes'    => 1000,
 		);
 	}
 
 	/**
 	 * @return string[]
 	 */
-	public static function integerFields(): array {
+	public static function integer_fields(): array {
 		return array( 'surah_number', 'ayah_start', 'ayah_end', 'wp_post_id' );
 	}
 

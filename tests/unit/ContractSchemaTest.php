@@ -15,7 +15,7 @@ final class ContractSchemaTest extends TestCase {
         $headers = array_reverse( ContractSchema::columns() );
         $result  = ( new HeaderValidator() )->validate( $headers );
 
-        self::assertTrue( $result->isValid() );
+        self::assertTrue( $result->is_valid() );
         self::assertSame( array(), $result->warnings() );
     }
 
@@ -30,6 +30,6 @@ final class ContractSchemaTest extends TestCase {
         self::assertContains( IssueCode::HEADER_MISSING_REQUIRED, $codes );
         self::assertContains( IssueCode::HEADER_DUPLICATE, $codes );
         self::assertContains( IssueCode::HEADER_UNKNOWN, $codes );
-        self::assertFalse( $result->isValid() );
+        self::assertFalse( $result->is_valid() );
     }
 }

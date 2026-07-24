@@ -17,7 +17,7 @@ final class DataContractValidatorTest extends TestCase {
             $original = $row;
             $result   = $this->validator->validate( $row, 2 );
 
-            self::assertTrue( $result->isValid(), $fixture );
+            self::assertTrue( $result->is_valid(), $fixture );
             self::assertSame( $original, $result->row() );
             self::assertSame( $original['arabic_text'], $result->row()['arabic_text'] );
         }
@@ -94,7 +94,7 @@ final class DataContractValidatorTest extends TestCase {
         $result                     = $this->validator->validate( $row );
         $codes                      = $this->codes( $result->warnings() );
 
-        self::assertTrue( $result->isValid() );
+        self::assertTrue( $result->is_valid() );
         self::assertContains( IssueCode::TITLE_LENGTH_WARNING, $codes );
         self::assertContains( IssueCode::REFLECTION_LENGTH_WARNING, $codes );
         self::assertContains( IssueCode::SOURCE_CONFIDENCE_MEDIUM, $codes );
