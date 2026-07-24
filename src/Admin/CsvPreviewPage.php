@@ -63,8 +63,8 @@ final class CsvPreviewPage {
 	 * @param array<string, mixed> $file Raw upload metadata.
 	 */
 	private function process_request( array $file ): CsvPreviewResult {
-		$path = is_string( $file['tmp_name'] ?? null ) ? $file['tmp_name'] : '';
-		$mime = $this->detect_mime( $path );
+		$path   = is_string( $file['tmp_name'] ?? null ) ? $file['tmp_name'] : '';
+		$mime   = $this->detect_mime( $path );
 		$upload = $this->upload_validator->validate(
 			$file,
 			'' !== $path && is_uploaded_file( $path ),
