@@ -31,7 +31,8 @@ final class CsvPreviewService {
 	}
 
 	private function safe_filename( string $filename ): string {
-		$filename = basename( str_replace( "\0", '', $filename ) );
+		$filename = str_replace( array( "\0", '\\' ), array( '', '/' ), $filename );
+		$filename = basename( $filename );
 		$filename = preg_replace( '/[\x00-\x1F\x7F]+/u', '', $filename );
 
 		return is_string( $filename ) && '' !== $filename ? $filename : 'preview.csv';
