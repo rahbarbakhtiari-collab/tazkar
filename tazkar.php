@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Tazkar – Quran & Hadith Reflections
  * Description:       زیرساخت افزونه تذکار برای مدیریت تلنگرهای قرآن و حدیث.
- * Version:           0.4.0-alpha.1
+ * Version:           0.5.0-alpha.1
  * Requires at least: 6.8
  * Requires PHP:      8.1
  * Author:            Tazkar Project
@@ -29,7 +29,7 @@ if ( version_compare( PHP_VERSION, '8.1', '<' ) ) {
 	return;
 }
 
-define( 'TAZKAR_VERSION', '0.4.0-alpha.1' );
+define( 'TAZKAR_VERSION', '0.5.0-alpha.1' );
 define( 'TAZKAR_DB_VERSION', '1' );
 define( 'TAZKAR_MIN_WP_VERSION', '6.8' );
 define( 'TAZKAR_MIN_PHP_VERSION', '8.1' );
