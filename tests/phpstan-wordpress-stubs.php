@@ -1,5 +1,7 @@
 <?php
 
+const ABSPATH = '/tmp/';
+
 class WP_Role {
     public function add_cap( string $capability ): void {}
     public function remove_cap( string $capability ): void {}
