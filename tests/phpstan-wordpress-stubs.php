@@ -31,6 +31,7 @@ function register_taxonomy( $taxonomy, $object_type, $args = array() ) {}
 function sanitize_text_field( $str ) { return (string) $str; }
 function sanitize_textarea_field( $str ) { return (string) $str; }
 function update_post_meta( $post_id, $meta_key, $meta_value, $prev_value = '' ) {}
+function wp_update_post( $postarr, $wp_error = false, $fire_after_hooks = true ) { return 1; }
 function add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $callback = '', $icon_url = '', $position = null ) {}
 function add_option( $option, $value = '', $deprecated = '', $autoload = 'yes' ) {}
 function current_user_can( $capability, ...$args ) { return true; }
