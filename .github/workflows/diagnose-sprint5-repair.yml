@@ -1,0 +1,25 @@
+name: Diagnose Sprint 5 repair
+
+on:
+  push:
+    branches:
+      - agent/17-sprint-5-chunk-resume-rollback
+    paths:
+      - .github/workflows/diagnose-sprint5-repair.yml
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report latest repair run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow repair-sprint5-review.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+          conclusion=$(gh run view "$run_id" --repo "$GITHUB_REPOSITORY" --json conclusion --jq '.conclusion')
+          gh pr comment 18 --repo "$GITHUB_REPOSITORY" --body "Sprint 5 repair diagnostic: run=${run_id}, conclusion=${conclusion}"
