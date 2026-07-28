@@ -108,9 +108,7 @@ final class CsvPreviewPage {
 			}
 		}
 
-		if ( $progress instanceof ChunkedImportProgress ) {
-			$this->redirect_to_batch( $progress->batch_uuid() );
-		}
+		$this->redirect_to_batch( $progress->batch_uuid() );
 	}
 
 	public function process_import(): void {
