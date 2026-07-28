@@ -16,14 +16,19 @@ Sprint 5 replaces the single-request CSV draft importer with a persistent, resum
 - the original uploaded file is removed after staging;
 - import processing is limited to a configurable chunk, default 25 and hard maximum 100;
 - row selection, cursor, lock, counts and state transitions remain server-owned;
+- only one active staged, processing or rollback-processing batch is allowed per authenticated administrator;
+- batch creation is serialized with a per-user database advisory lock so concurrent requests cannot create overlapping active batches;
+- process requests re-read the authoritative batch state after acquiring the batch lock, preventing processing from continuing after rollback has started;
 - interrupted `processing` rows are recovered and retried without duplicate terminal outcomes;
 - exact Arabic text is preserved through staging and resumed processing;
 - imported content is always created as `tazkar_item` Draft and never approved automatically;
 - staged payload is removed whenever a row becomes terminal;
 - rollback cancels unprocessed rows and moves only eligible, untouched, batch-owned drafts to Trash;
 - published, approved, edited, missing or foreign-owned posts are preserved and recorded as conflicts;
+- a non-mutating rollback preview reports eligible drafts, pending rows, protected/conflicting posts and recorded interactions before execution;
+- rollback execution requires a dedicated batch-bound nonce and explicit administrator confirmation after preview;
 - repeated process and rollback requests are idempotent;
-- the Persian administration screen exposes progress, counts, resume and rollback actions with escaped row outcomes.
+- the Persian administration screen exposes progress, counts, resume, rollback preview and confirmed rollback actions with escaped outcomes.
 
 ## 2. Persistence and migration
 
@@ -36,11 +41,14 @@ Sprint 5 replaces the single-request CSV draft importer with a persistent, resum
 ## 3. Security and privacy controls
 
 - All administration actions require `import_tazkar_items`.
-- Start, process, resume and rollback requests use dedicated nonces.
+- Start, process, resume, rollback preview and rollback requests use dedicated nonces.
 - Batch UUID input is validated and every operation resolves the batch by UUID plus authenticated owner ID.
 - Client-supplied cursor, row IDs, counts, state, post IDs and ownership data are not trusted.
+- Active-batch creation is protected by a per-user MySQL advisory lock and a server-side active-state query.
+- Processing validates the current batch state again while holding the batch lock, closing the process-versus-rollback race.
 - SQL identifiers and values use WordPress prepared-query facilities; the reserved `row_number` identifier is explicitly quoted.
 - Staging rejects HTML-bearing values and excludes server-owned import fields.
+- Rollback preview is non-mutating and recalculates current post classifications and interaction counts from server data.
 - No public REST write route, external request, telemetry, daemon, CDN asset or retained upload file was introduced.
 - Rollback verifies post type, batch ownership meta, row ownership meta, Draft status, review status and an import-time content snapshot before moving a post to Trash.
 
@@ -55,6 +63,7 @@ Sprint 5 replaces the single-request CSV draft importer with a persistent, resum
 - `src/Admin/CsvPreviewPage.php`
 - `src/Infrastructure/Database/Schema.php`
 - `tests/unit/ChunkedImportServiceTest.php`
+- `tests/unit/CsvPreviewPageImportSecurityTest.php`
 - `tests/wordpress-schema-v2-migration-smoke.php`
 - `tests/wordpress-chunked-import-smoke.php`
 - `.github/workflows/ci.yml`
@@ -62,8 +71,10 @@ Sprint 5 replaces the single-request CSV draft importer with a persistent, resum
 
 ## 5. Automated evidence
 
-The authoritative GitHub Actions run for code head `55c1febabe14c44365f1495569bce9b71539381f` passed:
+The authoritative final GitHub Actions execution for clean head `d82aa9f0db5a01afe332caede0913d752534e82a` passed:
 
+- CI run `30365202261` / run number `256`;
+- PR Policy run `30365202305` / run number `108`;
 - repository and fixture validation;
 - GitHub workflow YAML validation;
 - Composer validation and dependency audit;
@@ -71,17 +82,27 @@ The authoritative GitHub Actions run for code head `55c1febabe14c44365f1495569bc
 - PHP syntax lint;
 - PHPCS;
 - PHPStan;
-- PHPUnit;
+- PHPUnit, including active-batch rejection, post-lock state recheck, non-mutating rollback preview and explicit rollback confirmation regressions;
 - activation smoke;
 - deterministic plugin ZIP build;
 - PHP 8.1, 8.3, 8.4 and 8.5 quality matrix;
 - WordPress 7.0.2 + MySQL 8 installation, activation, deactivation and reactivation;
 - populated schema v1-to-v2 migration and repeated migration;
 - Sprint 0–4 regression smokes;
-- a 63-row Sprint 5 scenario proving multiple requests, interruption recovery, no duplicate posts, coherent terminal outcomes, payload removal, safe rollback conflicts and repeated rollback idempotency;
+- a 63-row Sprint 5 scenario proving multiple requests, interruption recovery, no duplicate posts, active-batch rejection, coherent terminal outcomes, exact Arabic preservation, payload removal, non-mutating rollback preview, interaction counting, safe rollback conflicts and repeated rollback idempotency;
 - PR Policy.
 
-## 6. Remaining real risks and limitations
+## 6. Review findings addressed
+
+The fresh current-generation review findings were addressed as follows:
+
+1. **Multiple active batches for one administrator:** batch creation now uses a per-user advisory lock and rejects an existing active batch before persistence.
+2. **Rollback executed without preview:** the administration flow now requires a non-mutating preview followed by explicit confirmed execution.
+3. **Process/rollback state race:** process now re-reads and validates batch state while holding the batch lock before recovering or claiming rows.
+
+The earlier schema-only findings about missing chunking and missing rollback apply to superseded commits and were already resolved.
+
+## 7. Remaining real risks and limitations
 
 - Human exploratory testing remains intentionally deferred until an official Release Candidate.
 - Staging parses the validated upload in the initial administration request; the existing 500-row, 60-column and 10 MB limits bound this phase.
@@ -89,12 +110,12 @@ The authoritative GitHub Actions run for code head `55c1febabe14c44365f1495569bc
 - Rollback never permanently deletes content and intentionally leaves conflicts for an administrator to review.
 - XLSX, editorial metaboxes, bulk scientific approval and publication remain outside Sprint 5.
 
-## 7. Final state
+## 8. Final state
 
 **Engineering and automated-gate result: PASS.**
 
-PR #18 remains Draft until a fresh independent architecture/security review confirms no actionable blocker. After that review, the PR may be marked ready and merged according to repository policy.
+PR #18 remains Draft only until a fresh independent review is completed against the final clean head. With no actionable blocker, the PR can be marked ready and merged according to repository policy.
 
-## 8. Suggested next task
+## 9. Suggested next task
 
 After Sprint 5 merges, reconcile Issues #13 and #14 with the Sprint 7 editorial-review plan before starting the next implementation Sprint.
