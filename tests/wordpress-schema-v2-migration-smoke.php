@@ -38,7 +38,7 @@ $row_created = $wpdb->query(
 	"CREATE TABLE {$tables['import_rows']} (
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 		batch_id bigint(20) unsigned NOT NULL,
-		row_number int(10) unsigned NOT NULL,
+		`row_number` int(10) unsigned NOT NULL,
 		record_id varchar(100) NOT NULL DEFAULT '',
 		status varchar(32) NOT NULL DEFAULT 'pending',
 		error_code varchar(100) NOT NULL DEFAULT '',
@@ -47,7 +47,7 @@ $row_created = $wpdb->query(
 		created_at datetime NOT NULL,
 		updated_at datetime NOT NULL,
 		PRIMARY KEY (id),
-		UNIQUE KEY batch_row (batch_id,row_number),
+		UNIQUE KEY batch_row (batch_id,`row_number`),
 		KEY record_id (record_id),
 		KEY status (status),
 		KEY wp_post_id (wp_post_id)
