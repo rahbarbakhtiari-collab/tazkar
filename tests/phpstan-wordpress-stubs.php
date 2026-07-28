@@ -15,6 +15,18 @@ class WP_Post {
 	public $post_type = 'tazkar_item';
 	/** @var string */
 	public $post_status = 'draft';
+	/** @var int */
+	public $post_author = 1;
+	/** @var string */
+	public $post_content = '';
+	/** @var string */
+	public $post_excerpt = '';
+	/** @var string */
+	public $post_modified_gmt = '2026-07-28 00:00:00';
+	/** @var string */
+	public $post_name = '';
+	/** @var string */
+	public $post_title = '';
 }
 
 class WP_Role {
@@ -60,7 +72,9 @@ function sanitize_textarea_field( $str ) { return (string) $str; }
 function sanitize_title( $title ) { return (string) $title; }
 function update_post_meta( $post_id, $meta_key, $meta_value, $prev_value = '' ) { return 1; }
 function wp_delete_post( $post_id, $force_delete = false ) { return null; }
+function wp_get_object_terms( $object_ids, $taxonomies, $args = array() ) { return array(); }
 function wp_generate_uuid4() { return '00000000-0000-4000-8000-000000000000'; }
+function wp_json_encode( $value, $flags = 0, $depth = 512 ) { return json_encode( $value, $flags, $depth ); }
 function wp_insert_post( $postarr, $wp_error = false, $fire_after_hooks = true ) { return 1; }
 function wp_set_object_terms( $object_id, $terms, $taxonomy, $append = false ) { return array(); }
 function wp_trash_post( $post_id ) { return new WP_Post(); }
