@@ -58,6 +58,7 @@ function current_time( $type, $gmt = 0 ) { return '2026-07-28 00:00:00'; }
 function current_user_can( $capability, ...$args ) { return true; }
 function delete_post_meta( $post_id, $meta_key, $meta_value = '' ) {}
 function get_current_user_id() { return 1; }
+function get_comments_number( $post_id = 0 ) { return 0; }
 function get_post( $post = null, $output = OBJECT, $filter = 'raw' ) { return new WP_Post(); }
 function get_post_meta( $post_id, $key = '', $single = false ) { return ''; }
 function get_post_status( $post_id ) { return 'publish'; }

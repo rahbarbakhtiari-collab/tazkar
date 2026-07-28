@@ -77,6 +77,14 @@ $service      = new ChunkedImportService();
 
 try {
 	$progress = $service->stage( $path, '../chunked-import.csv', 1, 25 );
+	try {
+		$service->stage( $path, 'overlapping-import.csv', 1, 25 );
+		$fail( 'A second active batch for the same user was accepted.' );
+	} catch ( RuntimeException $exception ) {
+		if ( false === strpos( $exception->getMessage(), 'active import' ) ) {
+			throw $exception;
+		}
+	}
 } finally {
 	@unlink( $path );
 }
@@ -205,6 +213,27 @@ wp_update_post(
 );
 wp_delete_post( $missing_post_id, true );
 update_post_meta( $foreign_post_id, '_tazkar_import_row_id', 999999 );
+wp_insert_comment(
+	array(
+		'comment_post_ID' => $eligible_post_id,
+		'comment_content' => 'Rollback preview interaction regression.',
+		'comment_approved' => 1,
+	)
+);
+
+$rollback_preview = $service->rollback_preview( $progress->batch_uuid(), 1 );
+if ( 55 !== $rollback_preview['eligible_drafts']
+	|| 1 !== $rollback_preview['published']
+	|| 1 !== $rollback_preview['approved']
+	|| 1 !== $rollback_preview['edited']
+	|| 1 !== $rollback_preview['missing']
+	|| 1 !== $rollback_preview['foreign']
+	|| 1 > $rollback_preview['interactions'] ) {
+	$fail( 'Rollback preview classifications or interaction counts are incorrect.' );
+}
+if ( 'draft' !== get_post_status( $eligible_post_id ) ) {
+	$fail( 'Rollback preview mutated an eligible draft.' );
+}
 
 $iterations = 0;
 while ( ! in_array( $progress->status(), array( 'rolled_back', 'rollback_with_conflicts' ), true ) && $iterations < 10 ) {

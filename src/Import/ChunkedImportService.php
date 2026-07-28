@@ -59,78 +59,90 @@ final class ChunkedImportService {
 		$seen_payloads  = array();
 		$headers_valid  = $validation->headers()->is_valid();
 
-		$this->repository->begin_row();
+		if ( ! $this->repository->acquire_user_import_lock( $user_id ) ) {
+			throw new RuntimeException( 'Another import is currently being prepared for this user.' );
+		}
+
 		try {
-			$batch = $this->repository->create_staged_batch(
-				$this->safe_filename( $filename ),
-				$checksum,
-				$schema_version,
-				count( $mapped ),
-				$user_id,
-				$this->bounded_chunk_size( $chunk_size )
-			);
-
-			foreach ( $validation->rows() as $index => $row_result ) {
-				$row          = $row_result->row();
-				$row_number   = $row_result->row_number() ?? $index + 2;
-				$record_id    = is_scalar( $row['record_id'] ?? null ) ? (string) $row['record_id'] : '';
-				$payload_hash = $this->payload_hash( $row );
-				$status       = 'pending';
-				$error_code   = '';
-				$post_id      = 0;
-				$payload      = null;
-
-				if ( '' !== $record_id && isset( $seen_records[ $record_id ] ) ) {
-					$status     = 'skipped';
-					$error_code = CsvImportIssueCode::DUPLICATE_BATCH_RECORD;
-				} elseif ( isset( $seen_payloads[ $payload_hash ] ) ) {
-					$status     = 'skipped';
-					$error_code = CsvImportIssueCode::DUPLICATE_BATCH_PAYLOAD;
-				} else {
-					if ( '' !== $record_id ) {
-						$seen_records[ $record_id ] = true;
-					}
-					$seen_payloads[ $payload_hash ] = true;
-
-					if ( ! $headers_valid || $this->has_blocking_errors( $row_result ) ) {
-						$status     = 'invalid';
-						$error_code = $headers_valid
-							? $this->first_error_code( $row_result )
-							: CsvImportIssueCode::HEADER_INVALID;
-					} elseif ( $this->contains_html( $row ) ) {
-						$status     = 'invalid';
-						$error_code = CsvImportIssueCode::ROW_INVALID;
-					} elseif ( 'approved' === (string) ( $row['review_status'] ?? '' ) ) {
-						$status     = 'skipped';
-						$error_code = CsvImportIssueCode::SOURCE_APPROVED;
-					} else {
-						$post_id = $this->repository->find_prior_post( $record_id, $payload_hash );
-						if ( $post_id > 0 ) {
-							$status     = 'skipped';
-							$error_code = CsvImportIssueCode::DUPLICATE_PRIOR;
-						} else {
-							$payload = $this->encode_staged_payload( $row );
-						}
-					}
+			$this->repository->begin_row();
+			try {
+				if ( $this->repository->has_active_batch( $user_id ) ) {
+					throw new RuntimeException( 'Finish or roll back the active import before staging another file.' );
 				}
 
-				$this->repository->stage_row(
-					(int) $batch['id'],
-					$row_number,
-					$record_id,
-					$status,
-					$error_code,
-					$post_id,
-					$payload_hash,
-					$payload
+				$batch = $this->repository->create_staged_batch(
+					$this->safe_filename( $filename ),
+					$checksum,
+					$schema_version,
+					count( $mapped ),
+					$user_id,
+					$this->bounded_chunk_size( $chunk_size )
 				);
-			}
 
-			$this->synchronize_batch( (int) $batch['id'], 'staged' );
-			$this->repository->commit_row();
-		} catch ( \Throwable $exception ) {
-			$this->repository->rollback_row();
-			throw $exception;
+				foreach ( $validation->rows() as $index => $row_result ) {
+					$row          = $row_result->row();
+					$row_number   = $row_result->row_number() ?? $index + 2;
+					$record_id    = is_scalar( $row['record_id'] ?? null ) ? (string) $row['record_id'] : '';
+					$payload_hash = $this->payload_hash( $row );
+					$status       = 'pending';
+					$error_code   = '';
+					$post_id      = 0;
+					$payload      = null;
+
+					if ( '' !== $record_id && isset( $seen_records[ $record_id ] ) ) {
+						$status     = 'skipped';
+						$error_code = CsvImportIssueCode::DUPLICATE_BATCH_RECORD;
+					} elseif ( isset( $seen_payloads[ $payload_hash ] ) ) {
+						$status     = 'skipped';
+						$error_code = CsvImportIssueCode::DUPLICATE_BATCH_PAYLOAD;
+					} else {
+						if ( '' !== $record_id ) {
+							$seen_records[ $record_id ] = true;
+						}
+						$seen_payloads[ $payload_hash ] = true;
+
+						if ( ! $headers_valid || $this->has_blocking_errors( $row_result ) ) {
+							$status     = 'invalid';
+							$error_code = $headers_valid
+							? $this->first_error_code( $row_result )
+							: CsvImportIssueCode::HEADER_INVALID;
+						} elseif ( $this->contains_html( $row ) ) {
+							$status     = 'invalid';
+							$error_code = CsvImportIssueCode::ROW_INVALID;
+						} elseif ( 'approved' === (string) ( $row['review_status'] ?? '' ) ) {
+							$status     = 'skipped';
+							$error_code = CsvImportIssueCode::SOURCE_APPROVED;
+						} else {
+							$post_id = $this->repository->find_prior_post( $record_id, $payload_hash );
+							if ( $post_id > 0 ) {
+								$status     = 'skipped';
+								$error_code = CsvImportIssueCode::DUPLICATE_PRIOR;
+							} else {
+								$payload = $this->encode_staged_payload( $row );
+							}
+						}
+					}
+
+					$this->repository->stage_row(
+						(int) $batch['id'],
+						$row_number,
+						$record_id,
+						$status,
+						$error_code,
+						$post_id,
+						$payload_hash,
+						$payload
+					);
+				}
+
+				$this->synchronize_batch( (int) $batch['id'], 'staged' );
+				$this->repository->commit_row();
+			} catch ( \Throwable $exception ) {
+				$this->repository->rollback_row();
+				throw $exception;
+			}
+		} finally {
+			$this->repository->release_user_import_lock( $user_id );
 		}
 
 		return $this->progress( (string) $batch['uuid'], $user_id );
@@ -148,6 +160,11 @@ final class ChunkedImportService {
 		}
 
 		try {
+			$batch = $this->require_batch( $batch_uuid, $user_id );
+			if ( ! in_array( (string) $batch['status'], array( 'staged', 'processing' ), true ) ) {
+				return $this->progress( $batch_uuid, $user_id );
+			}
+
 			$this->repository->recover_processing_rows( (int) $batch['id'] );
 			$rows = $this->repository->pending_rows(
 				(int) $batch['id'],
@@ -174,6 +191,74 @@ final class ChunkedImportService {
 
 	public function resume( string $batch_uuid, int $user_id ): ChunkedImportProgress {
 		return $this->process( $batch_uuid, $user_id );
+	}
+
+
+	/** @return array<string, int> */
+	public function rollback_preview( string $batch_uuid, int $user_id ): array {
+		$batch  = $this->require_batch( $batch_uuid, $user_id );
+		$counts = array(
+			'total_candidates' => 0,
+			'pending'          => 0,
+			'eligible_drafts'  => 0,
+			'published'        => 0,
+			'approved'         => 0,
+			'edited'           => 0,
+			'missing'          => 0,
+			'foreign'          => 0,
+			'other_conflicts'  => 0,
+			'already_trashed'  => 0,
+			'interactions'     => 0,
+		);
+
+		foreach ( $this->repository->rows( (int) $batch['id'] ) as $row ) {
+			$status = (string) ( $row['status'] ?? '' );
+			if ( in_array( $status, array( 'pending', 'processing' ), true ) ) {
+				++$counts['total_candidates'];
+				++$counts['pending'];
+				continue;
+			}
+			if ( 'imported' !== $status ) {
+				continue;
+			}
+
+			++$counts['total_candidates'];
+			$inspection              = $this->content_writer->inspect_rollback(
+				(int) ( $row['wp_post_id'] ?? 0 ),
+				$batch_uuid,
+				(int) ( $row['id'] ?? 0 )
+			);
+			$counts['interactions'] += max( 0, (int) ( $inspection['interactions'] ?? 0 ) );
+
+			switch ( (string) ( $inspection['outcome'] ?? '' ) ) {
+				case RollbackAwareContentWriter::ROLLBACK_ELIGIBLE:
+					++$counts['eligible_drafts'];
+					break;
+				case RollbackAwareContentWriter::ROLLBACK_PUBLISHED:
+					++$counts['published'];
+					break;
+				case RollbackAwareContentWriter::ROLLBACK_APPROVED:
+					++$counts['approved'];
+					break;
+				case RollbackAwareContentWriter::ROLLBACK_EDITED:
+					++$counts['edited'];
+					break;
+				case RollbackAwareContentWriter::ROLLBACK_MISSING:
+					++$counts['missing'];
+					break;
+				case RollbackAwareContentWriter::ROLLBACK_FOREIGN:
+					++$counts['foreign'];
+					break;
+				case RollbackAwareContentWriter::ROLLBACK_ALREADY_TRASHED:
+					++$counts['already_trashed'];
+					break;
+				default:
+					++$counts['other_conflicts'];
+					break;
+			}
+		}
+
+		return $counts;
 	}
 
 	public function rollback( string $batch_uuid, int $user_id ): ChunkedImportProgress {

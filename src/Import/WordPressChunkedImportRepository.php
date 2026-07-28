@@ -6,6 +6,42 @@ use RuntimeException;
 use Tazkar\Infrastructure\Database\Schema;
 
 final class WordPressChunkedImportRepository implements ChunkedImportRepository {
+
+	public function acquire_user_import_lock( int $user_id ): bool {
+		global $wpdb;
+		/** @var \wpdb $wpdb */
+
+		$value = $wpdb->get_var(
+			$wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $this->user_import_lock_name( $user_id ) )
+		);
+
+		return 1 === (int) $value;
+	}
+
+	public function release_user_import_lock( int $user_id ): void {
+		global $wpdb;
+		/** @var \wpdb $wpdb */
+
+		$wpdb->get_var(
+			$wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $this->user_import_lock_name( $user_id ) )
+		);
+	}
+
+	public function has_active_batch( int $user_id ): bool {
+		global $wpdb;
+		/** @var \wpdb $wpdb */
+
+		$table = Schema::table_names( $wpdb->prefix )['import_batches'];
+		$value = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM %i WHERE created_by = %d AND status IN ('staged','processing','rollback_processing') LIMIT 1",
+				$table,
+				$user_id
+			)
+		);
+
+		return is_numeric( $value ) && (int) $value > 0;
+	}
 	/** @return array{id:int,uuid:string,repeated_source:bool} */
 	public function create_staged_batch(
 		string $filename,
@@ -522,5 +558,13 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 		if ( false === $ok ) {
 			throw new RuntimeException( 'Import rollback could not be finalized.' );
 		}
+	}
+
+
+	private function user_import_lock_name( int $user_id ): string {
+		global $wpdb;
+		/** @var \wpdb $wpdb */
+
+		return 'tazkar-import-' . substr( hash( 'sha256', $wpdb->prefix . '|' . $user_id ), 0, 40 );
 	}
 }

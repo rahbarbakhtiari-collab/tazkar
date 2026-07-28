@@ -6,6 +6,7 @@ use RuntimeException;
 use Tazkar\Content\ContentType;
 use Tazkar\Content\MetaRegistry;
 use Tazkar\Content\Taxonomies;
+use Tazkar\Infrastructure\Database\Schema;
 
 final class WordPressContentWriter implements RollbackAwareContentWriter {
 	private const BATCH_OWNER_META = '_tazkar_import_batch_uuid';
@@ -56,41 +57,114 @@ final class WordPressContentWriter implements RollbackAwareContentWriter {
 		$this->store_meta( $post_id, self::SNAPSHOT_META, $this->snapshot_hash( $post_id ) );
 	}
 
-	public function rollback_owned_draft( int $post_id, string $batch_uuid, int $row_id ): string {
+	/** @return array{outcome:string,interactions:int} */
+	public function inspect_rollback( int $post_id, string $batch_uuid, int $row_id ): array {
 		if ( $post_id < 1 ) {
-			return self::ROLLBACK_MISSING;
+			return array(
+				'outcome'      => self::ROLLBACK_MISSING,
+				'interactions' => 0,
+			);
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post instanceof \WP_Post ) {
-			return self::ROLLBACK_MISSING;
+			return array(
+				'outcome'      => self::ROLLBACK_MISSING,
+				'interactions' => 0,
+			);
 		}
+
+		$interactions = $this->interaction_count( $post_id );
 		if ( ContentType::POST_TYPE !== $post->post_type ) {
-			return self::ROLLBACK_CONFLICT;
+			return array(
+				'outcome'      => self::ROLLBACK_FOREIGN,
+				'interactions' => $interactions,
+			);
 		}
 
 		$stored_batch = (string) get_post_meta( $post_id, self::BATCH_OWNER_META, true );
 		$stored_row   = (int) get_post_meta( $post_id, self::ROW_OWNER_META, true );
 		if ( $stored_batch !== $batch_uuid || $stored_row !== $row_id ) {
-			return self::ROLLBACK_CONFLICT;
+			return array(
+				'outcome'      => self::ROLLBACK_FOREIGN,
+				'interactions' => $interactions,
+			);
 		}
 		if ( 'trash' === $post->post_status ) {
-			return self::ROLLBACK_ALREADY_TRASHED;
+			return array(
+				'outcome'      => self::ROLLBACK_ALREADY_TRASHED,
+				'interactions' => $interactions,
+			);
+		}
+		if ( 'publish' === $post->post_status ) {
+			return array(
+				'outcome'      => self::ROLLBACK_PUBLISHED,
+				'interactions' => $interactions,
+			);
+		}
+		if ( 'draft' !== $post->post_status ) {
+			return array(
+				'outcome'      => self::ROLLBACK_CONFLICT,
+				'interactions' => $interactions,
+			);
 		}
 
 		$review_status = (string) get_post_meta( $post_id, MetaRegistry::key( 'review_status' ), true );
-		if ( 'draft' !== $post->post_status || 'approved' === $review_status ) {
-			return self::ROLLBACK_CONFLICT;
+		if ( 'approved' === $review_status ) {
+			return array(
+				'outcome'      => self::ROLLBACK_APPROVED,
+				'interactions' => $interactions,
+			);
 		}
 
 		$stored_snapshot = (string) get_post_meta( $post_id, self::SNAPSHOT_META, true );
 		if ( '' === $stored_snapshot || ! hash_equals( $stored_snapshot, $this->snapshot_hash( $post_id ) ) ) {
+			return array(
+				'outcome'      => self::ROLLBACK_EDITED,
+				'interactions' => $interactions,
+			);
+		}
+
+		return array(
+			'outcome'      => self::ROLLBACK_ELIGIBLE,
+			'interactions' => $interactions,
+		);
+	}
+
+	public function rollback_owned_draft( int $post_id, string $batch_uuid, int $row_id ): string {
+		$inspection = $this->inspect_rollback( $post_id, $batch_uuid, $row_id );
+		$outcome    = $inspection['outcome'];
+		if ( self::ROLLBACK_ALREADY_TRASHED === $outcome ) {
+			return self::ROLLBACK_ALREADY_TRASHED;
+		}
+		if ( self::ROLLBACK_MISSING === $outcome ) {
+			return self::ROLLBACK_MISSING;
+		}
+		if ( self::ROLLBACK_ELIGIBLE !== $outcome ) {
 			return self::ROLLBACK_CONFLICT;
 		}
 
 		$trashed = wp_trash_post( $post_id );
 
 		return false === $trashed ? self::ROLLBACK_CONFLICT : self::ROLLBACK_TRASHED;
+	}
+
+
+	private function interaction_count( int $post_id ): int {
+		global $wpdb;
+		/** @var \wpdb $wpdb */
+
+		$tables    = Schema::table_names( $wpdb->prefix );
+		$feedback  = $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE item_id = %d', $tables['feedback'], $post_id )
+		);
+		$favorites = $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE item_id = %d', $tables['favorites'], $post_id )
+		);
+
+		return max( 0, (int) get_comments_number( $post_id ) )
+			+ max( 0, (int) $feedback )
+			+ max( 0, (int) $favorites );
 	}
 
 	private function snapshot_hash( int $post_id ): string {

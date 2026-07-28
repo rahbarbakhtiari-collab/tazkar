@@ -19,6 +19,7 @@ final class CsvPreviewPageImportSecurityTest extends TestCase {
 		self::assertArrayHasKey( 'admin_post_tazkar_import_start', $GLOBALS['tazkar_test_actions'] );
 		self::assertArrayHasKey( 'admin_post_tazkar_import_process', $GLOBALS['tazkar_test_actions'] );
 		self::assertArrayHasKey( 'admin_post_tazkar_import_resume', $GLOBALS['tazkar_test_actions'] );
+		self::assertArrayHasKey( 'admin_post_tazkar_import_rollback_preview', $GLOBALS['tazkar_test_actions'] );
 		self::assertArrayHasKey( 'admin_post_tazkar_import_rollback', $GLOBALS['tazkar_test_actions'] );
 	}
 
@@ -53,6 +54,15 @@ final class CsvPreviewPageImportSecurityTest extends TestCase {
 			),
 			$GLOBALS['tazkar_test_nonce_action']
 		);
+	}
+
+
+	public function test_rollback_action_requires_explicit_confirmation(): void {
+		$_POST['batch_uuid'] = '11111111-1111-4111-8111-111111111111';
+
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Rollback requires explicit administrator confirmation.' );
+		( new CsvPreviewPage() )->rollback_import();
 	}
 
 	public function test_import_actions_require_capability(): void {

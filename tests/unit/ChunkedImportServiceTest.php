@@ -112,6 +112,51 @@ final class ChunkedImportServiceTest extends TestCase {
 		$service->process( $progress->batch_uuid(), 10 );
 	}
 
+
+	public function test_second_active_batch_for_same_user_is_rejected(): void {
+		$repository = new TazkarTestChunkedRepository();
+		$writer     = new TazkarTestRollbackWriter();
+		$service    = $this->service( $repository, $writer );
+		$service->stage( $this->csv_with_rows( 1 ), 'first.csv', 9 );
+
+		$this->expectException( RuntimeException::class );
+		$service->stage( $this->csv_with_rows( 1 ), 'second.csv', 9 );
+	}
+
+	public function test_process_rechecks_batch_state_after_lock(): void {
+		$repository = new TazkarTestChunkedRepository();
+		$writer     = new TazkarTestRollbackWriter();
+		$service    = $this->service( $repository, $writer );
+		$progress   = $service->stage( $this->csv_with_rows( 1 ), 'race.csv', 9 );
+		$repository->status_after_lock = 'rollback_processing';
+
+		$progress = $service->process( $progress->batch_uuid(), 9 );
+
+		self::assertSame( 'rollback_processing', $progress->status() );
+		self::assertSame( 'pending', $repository->rows[1]['status'] );
+		self::assertCount( 0, $writer->created );
+	}
+
+	public function test_rollback_preview_is_non_mutating_and_reports_classifications(): void {
+		$repository = new TazkarTestChunkedRepository();
+		$writer     = new TazkarTestRollbackWriter();
+		$service    = $this->service( $repository, $writer );
+		$progress   = $service->stage( $this->csv_with_rows( 2 ), 'preview-rollback.csv', 10, 2 );
+		$progress   = $service->process( $progress->batch_uuid(), 10 );
+		$writer->inspection_outcomes[101] = RollbackAwareContentWriter::ROLLBACK_ELIGIBLE;
+		$writer->inspection_outcomes[102] = RollbackAwareContentWriter::ROLLBACK_PUBLISHED;
+		$writer->interaction_counts[102]  = 3;
+
+		$preview = $service->rollback_preview( $progress->batch_uuid(), 10 );
+
+		self::assertSame( 1, $preview['eligible_drafts'] );
+		self::assertSame( 1, $preview['published'] );
+		self::assertSame( 3, $preview['interactions'] );
+		self::assertSame( 'imported', $repository->rows[1]['status'] );
+		self::assertSame( 'imported', $repository->rows[2]['status'] );
+		self::assertCount( 0, $writer->rollback_calls );
+	}
+
 	public function test_rollback_cancels_pending_rows_and_removes_payload(): void {
 		$repository = new TazkarTestChunkedRepository();
 		$writer     = new TazkarTestRollbackWriter();
@@ -210,6 +255,8 @@ final class TazkarTestChunkedRepository implements ChunkedImportRepository {
 	/** @var array<string, mixed> */
 	public array $batch = array();
 	private bool $locked = false;
+	private bool $user_locked = false;
+	public ?string $status_after_lock = null;
 
 	public function create_staged_batch(
 		string $filename,
@@ -267,12 +314,36 @@ final class TazkarTestChunkedRepository implements ChunkedImportRepository {
 			: null;
 	}
 
+	public function acquire_user_import_lock( int $user_id ): bool {
+		unset( $user_id );
+		if ( $this->user_locked ) {
+			return false;
+		}
+		$this->user_locked = true;
+
+		return true;
+	}
+
+	public function release_user_import_lock( int $user_id ): void {
+		unset( $user_id );
+		$this->user_locked = false;
+	}
+
+	public function has_active_batch( int $user_id ): bool {
+		return $user_id === ( $this->batch['created_by'] ?? 0 )
+			&& in_array( (string) ( $this->batch['status'] ?? '' ), array( 'staged', 'processing', 'rollback_processing' ), true );
+	}
+
 	public function acquire_lock( int $batch_id, string $token, string $expires_at ): bool {
 		unset( $batch_id, $token, $expires_at );
 		if ( $this->locked ) {
 			return false;
 		}
 		$this->locked = true;
+		if ( null !== $this->status_after_lock ) {
+			$this->batch['status'] = $this->status_after_lock;
+			$this->status_after_lock = null;
+		}
 		return true;
 	}
 
@@ -449,6 +520,10 @@ final class TazkarTestRollbackWriter implements RollbackAwareContentWriter {
 	public array $created = array();
 	/** @var array<int, string> */
 	public array $rollback_outcomes = array();
+	/** @var array<int, string> */
+	public array $inspection_outcomes = array();
+	/** @var array<int, int> */
+	public array $interaction_counts = array();
 	/** @var int[] */
 	public array $rollback_calls = array();
 	private int $next_post_id = 101;
@@ -466,6 +541,15 @@ final class TazkarTestRollbackWriter implements RollbackAwareContentWriter {
 	public function mark_import_ownership( int $post_id, string $batch_uuid, int $row_id ): void {
 		$this->created[ $post_id ]['batch_uuid'] = $batch_uuid;
 		$this->created[ $post_id ]['row_id']     = $row_id;
+	}
+
+	public function inspect_rollback( int $post_id, string $batch_uuid, int $row_id ): array {
+		unset( $batch_uuid, $row_id );
+
+		return array(
+			'outcome'      => $this->inspection_outcomes[ $post_id ] ?? self::ROLLBACK_ELIGIBLE,
+			'interactions' => $this->interaction_counts[ $post_id ] ?? 0,
+		);
 	}
 
 	public function rollback_owned_draft( int $post_id, string $batch_uuid, int $row_id ): string {

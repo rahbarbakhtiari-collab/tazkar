@@ -42,6 +42,7 @@ final class CsvPreviewPage {
 		add_action( 'admin_post_tazkar_import_start', array( $this, 'start_import' ) );
 		add_action( 'admin_post_tazkar_import_process', array( $this, 'process_import' ) );
 		add_action( 'admin_post_tazkar_import_resume', array( $this, 'resume_import' ) );
+		add_action( 'admin_post_tazkar_import_rollback_preview', array( $this, 'preview_rollback' ) );
 		add_action( 'admin_post_tazkar_import_rollback', array( $this, 'rollback_import' ) );
 	}
 
@@ -58,9 +59,10 @@ final class CsvPreviewPage {
 
 	public function render(): void {
 		$this->require_capability();
-		$preview_result = null;
-		$progress       = null;
-		$error          = null;
+		$preview_result   = null;
+		$progress         = null;
+		$rollback_preview = null;
+		$error            = null;
 
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
 			try {
@@ -75,12 +77,15 @@ final class CsvPreviewPage {
 		if ( '' !== $batch_uuid ) {
 			try {
 				$progress = $this->import_service->progress( $batch_uuid, get_current_user_id() );
+				if ( $this->request_rollback_preview() ) {
+					$rollback_preview = $this->import_service->rollback_preview( $batch_uuid, get_current_user_id() );
+				}
 			} catch ( \Throwable $exception ) {
 				$error = $exception;
 			}
 		}
 
-		$this->render_page( $preview_result, $progress, $error );
+		$this->render_page( $preview_result, $progress, $rollback_preview, $error );
 	}
 
 	public function start_import(): void {
@@ -119,7 +124,15 @@ final class CsvPreviewPage {
 		$this->handle_batch_action( 'resume' );
 	}
 
+	public function preview_rollback(): void {
+		$this->handle_batch_action( 'rollback_preview' );
+	}
+
 	public function rollback_import(): void {
+		if ( ! $this->request_rollback_confirmation() ) {
+			$this->render_action_error( new RuntimeException( 'Rollback requires explicit administrator confirmation.' ) );
+			return;
+		}
 		$this->handle_batch_action( 'rollback' );
 	}
 
@@ -167,7 +180,9 @@ final class CsvPreviewPage {
 		check_admin_referer( 'tazkar_import_' . $action . '_' . $batch_uuid, 'tazkar_import_nonce' );
 
 		try {
-			if ( 'rollback' === $action ) {
+			if ( 'rollback_preview' === $action ) {
+				$this->import_service->rollback_preview( $batch_uuid, get_current_user_id() );
+			} elseif ( 'rollback' === $action ) {
 				$this->import_service->rollback( $batch_uuid, get_current_user_id() );
 			} elseif ( 'resume' === $action ) {
 				$this->import_service->resume( $batch_uuid, get_current_user_id() );
@@ -179,7 +194,19 @@ final class CsvPreviewPage {
 			return;
 		}
 
-		$this->redirect_to_batch( $batch_uuid );
+		$this->redirect_to_batch( $batch_uuid, 'rollback_preview' === $action );
+	}
+
+	private function request_rollback_preview(): bool {
+		$value = $_GET['rollback_preview'] ?? '';
+
+		return is_scalar( $value ) && '1' === sanitize_text_field( wp_unslash( (string) $value ) );
+	}
+
+	private function request_rollback_confirmation(): bool {
+		$value = $_POST['tazkar_confirm_rollback'] ?? '';
+
+		return is_scalar( $value ) && '1' === sanitize_text_field( wp_unslash( (string) $value ) );
 	}
 
 	/** @param array<string, mixed> $source Request source. */
@@ -210,12 +237,16 @@ final class CsvPreviewPage {
 		}
 	}
 
-	private function redirect_to_batch( string $batch_uuid ): void {
+	private function redirect_to_batch( string $batch_uuid, bool $rollback_preview = false ): void {
+		$query = array(
+			'page'       => self::PAGE_SLUG,
+			'batch_uuid' => $batch_uuid,
+		);
+		if ( $rollback_preview ) {
+			$query['rollback_preview'] = '1';
+		}
 		$url = add_query_arg(
-			array(
-				'page'       => self::PAGE_SLUG,
-				'batch_uuid' => $batch_uuid,
-			),
+			$query,
 			admin_url( 'admin.php' )
 		);
 		wp_safe_redirect( $url );
@@ -229,6 +260,7 @@ final class CsvPreviewPage {
 	private function render_page(
 		?CsvPreviewResult $preview_result,
 		?ChunkedImportProgress $progress,
+		?array $rollback_preview,
 		?\Throwable $error
 	): void {
 		?>
@@ -260,7 +292,7 @@ final class CsvPreviewPage {
 				<?php $this->render_preview_result( $preview_result ); ?>
 			<?php endif; ?>
 			<?php if ( null !== $progress ) : ?>
-				<?php $this->render_progress( $progress ); ?>
+				<?php $this->render_progress( $progress, $rollback_preview ); ?>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -320,7 +352,8 @@ final class CsvPreviewPage {
 		<?php
 	}
 
-	private function render_progress( ChunkedImportProgress $progress ): void {
+	/** @param array<string, int>|null $rollback_preview */
+	private function render_progress( ChunkedImportProgress $progress, ?array $rollback_preview ): void {
 		?>
 		<hr>
 		<h2><?php echo esc_html__( 'وضعیت بسته ورود', 'tazkar' ); ?></h2>
@@ -340,10 +373,13 @@ final class CsvPreviewPage {
 				<?php $this->render_batch_action_form( $progress->batch_uuid(), 'process', __( 'پردازش قطعه بعدی', 'tazkar' ), 'primary' ); ?>
 				<?php $this->render_batch_action_form( $progress->batch_uuid(), 'resume', __( 'ادامه پردازش', 'tazkar' ), 'secondary' ); ?>
 			<?php endif; ?>
-			<?php if ( $progress->can_rollback() ) : ?>
-				<?php $this->render_batch_action_form( $progress->batch_uuid(), 'rollback', __( 'بازگردانی قطعه بعدی', 'tazkar' ), 'delete' ); ?>
+			<?php if ( $progress->can_rollback() && null === $rollback_preview ) : ?>
+				<?php $this->render_batch_action_form( $progress->batch_uuid(), 'rollback_preview', __( 'پیش‌نمایش بازگردانی', 'tazkar' ), 'secondary' ); ?>
 			<?php endif; ?>
 		</div>
+		<?php if ( null !== $rollback_preview ) : ?>
+			<?php $this->render_rollback_preview( $progress->batch_uuid(), $rollback_preview ); ?>
+		<?php endif; ?>
 		<h3><?php echo esc_html__( 'نتیجه ردیف‌ها', 'tazkar' ); ?></h3>
 		<table class="widefat striped"><thead><tr>
 			<th><?php echo esc_html__( 'ردیف', 'tazkar' ); ?></th>
@@ -367,11 +403,36 @@ final class CsvPreviewPage {
 		<?php
 	}
 
-	private function render_batch_action_form( string $batch_uuid, string $action, string $label, string $button_class ): void {
+
+	/** @param array<string, int> $preview */
+	private function render_rollback_preview( string $batch_uuid, array $preview ): void {
+		?>
+		<div class="notice notice-warning inline" style="max-width:1000px;padding:12px">
+			<h3><?php echo esc_html__( 'پیش‌نمایش بازگردانی — هنوز هیچ تغییری اعمال نشده است', 'tazkar' ); ?></h3>
+			<table class="widefat striped"><tbody>
+				<tr><th><?php echo esc_html__( 'پیش‌نویس قابل انتقال به زباله‌دان', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['eligible_drafts'] ?? 0 ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'ردیف در انتظار لغو', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['pending'] ?? 0 ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'منتشرشده — حفظ می‌شود', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['published'] ?? 0 ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'تأییدشده — حفظ می‌شود', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['approved'] ?? 0 ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'ویرایش‌شده — حفظ می‌شود', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['edited'] ?? 0 ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'گم‌شده یا با مالکیت متفاوت — تعارض', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( ( $preview['missing'] ?? 0 ) + ( $preview['foreign'] ?? 0 ) + ( $preview['other_conflicts'] ?? 0 ) ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'تعامل‌های ثبت‌شده', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['interactions'] ?? 0 ) ); ?></td></tr>
+			</tbody></table>
+			<p><?php echo esc_html__( 'با تأیید زیر، فقط پیش‌نویس‌های بدون تغییر و متعلق به همین بسته به زباله‌دان منتقل می‌شوند؛ موارد منتشرشده، تأییدشده، ویرایش‌شده یا دارای تعارض حفظ خواهند شد.', 'tazkar' ); ?></p>
+			<?php $this->render_batch_action_form( $batch_uuid, 'rollback', __( 'تأیید و اجرای بازگردانی', 'tazkar' ), 'delete', true ); ?>
+		</div>
+		<?php
+	}
+
+	private function render_batch_action_form( string $batch_uuid, string $action, string $label, string $button_class, bool $confirmed = false ): void {
 		?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:0">
 			<input type="hidden" name="action" value="<?php echo esc_attr( 'tazkar_import_' . $action ); ?>">
 			<input type="hidden" name="batch_uuid" value="<?php echo esc_attr( $batch_uuid ); ?>">
+			<?php
+			if ( $confirmed ) :
+				?>
+				<input type="hidden" name="tazkar_confirm_rollback" value="1"><?php endif; ?>
 			<?php wp_nonce_field( 'tazkar_import_' . $action . '_' . $batch_uuid, 'tazkar_import_nonce' ); ?>
 			<?php submit_button( $label, $button_class, 'submit', false ); ?>
 		</form>

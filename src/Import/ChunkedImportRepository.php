@@ -29,6 +29,12 @@ interface ChunkedImportRepository {
 	/** @return array<string, mixed>|null */
 	public function get_owned_batch( string $batch_uuid, int $user_id ): ?array;
 
+	public function acquire_user_import_lock( int $user_id ): bool;
+
+	public function release_user_import_lock( int $user_id ): void;
+
+	public function has_active_batch( int $user_id ): bool;
+
 	public function acquire_lock( int $batch_id, string $token, string $expires_at ): bool;
 
 	public function release_lock( int $batch_id, string $token ): void;
