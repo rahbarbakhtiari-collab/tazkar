@@ -1,55 +1,57 @@
-# Tazkar – Sprint 1
+# Tazkar
 
-مدل محتوای نصب‌شدنی افزونه تذکار روی زیرساخت Sprint صفر.
+Tazkar is a Persian-first WordPress plugin for safely managing short Quran and Hadith reflections.
 
-## نیازمندی‌ها
+## Requirements
 
-- WordPress 6.8+
-- PHP 8.1+
+- WordPress 7.0.2
+- PHP 8.1 or newer
+- MySQL 8 for the verified integration environment
 
-## بررسی محلی بدون Composer
+Pre-release WordPress versions are not production baselines. Any future baseline change starts in the authoritative project documentation before code, headers, CI, or tests are changed.
 
-```bash
-bash bin/lint.sh
-php tests/smoke.php
-php tests/activation-smoke.php
-bash bin/build.sh
-```
+## Current scope: Sprint 5
 
-## بررسی کامل با Composer
+Version `0.6.0-alpha.1` includes:
+
+- the `tazkar_item` content model, taxonomies, and registered metadata;
+- exact Arabic-text preservation and sensitive-change safeguards;
+- secure CSV preview and validation;
+- draft-only CSV import with persistent batch and row records;
+- allowlisted staging payloads removed at terminal row states;
+- bounded chunk processing with server-owned selection and retry-safe resume;
+- conflict-aware, idempotent rollback that only trashes eligible batch-owned drafts;
+- Persian and RTL administration screens with translation-ready strings.
+
+The plugin does not publish imported content automatically, make external runtime requests, or send telemetry.
+
+## Quality commands
 
 ```bash
 composer install
+python3 scripts/validate_repository.py
+composer validate --strict
+composer audit --no-interaction --format=plain
+python3 scripts/scan_secrets.py
 composer lint
 composer test
+php tests/activation-smoke.php
 vendor/bin/phpcs
 vendor/bin/phpstan analyse
 vendor/bin/phpunit
 composer build
 ```
 
-## محدوده این نسخه
+The GitHub Actions WordPress smoke job installs the built ZIP on WordPress 7.0.2 with MySQL 8 and runs content-model, CSV preview, Sprint 4 regression, schema migration, and Sprint 5 chunk/resume/rollback tests.
 
-این نسخه علاوه بر زیرساخت Sprint صفر، CPT `tazkar_item`، taxonomyها، metaهای قرارداد داده، hash متن عربی و محافظ تغییرات حساس را دارد. درون‌ریز و frontend در Sprintهای بعدی ساخته می‌شوند.
+## Data lifecycle
 
-## سیاست داده
+- Deactivation preserves all plugin data.
+- Uninstall preserves data by default.
+- Complete deletion is only allowed when the explicit plugin option `tazkar_delete_data_on_uninstall=yes` is enabled.
+- The original CSV upload is removed after staging.
+- Pending staged payload is minimal and allowlisted; terminal rows retain outcomes, not source payload.
 
-- Deactivation هیچ داده دائمی را حذف نمی‌کند.
-- Uninstall نیز به‌صورت پیش‌فرض داده را حفظ می‌کند.
-- حذف کامل فقط با گزینه صریح `tazkar_delete_data_on_uninstall=yes` انجام می‌شود؛ رابط این گزینه هنوز ساخته نشده است.
+## Development governance
 
-## مستندات توسعه
-
-- قرارداد Codex: [`AGENTS.md`](AGENTS.md)
-- راه‌اندازی GitHub: [`docs/development/GITHUB-BOOTSTRAP.md`](docs/development/GITHUB-BOOTSTRAP.md)
-- نصب و تست Local: [`docs/development/LOCAL-SETUP-AND-HUMAN-TEST.md`](docs/development/LOCAL-SETUP-AND-HUMAN-TEST.md)
-- روال همکاری Codex: [`docs/development/CODEX-COLLABORATION-WORKFLOW.md`](docs/development/CODEX-COLLABORATION-WORKFLOW.md)
-- وضعیت جاری: [`docs/management/project-status.md`](docs/management/project-status.md)
-
-## Autonomous development
-
-Intermediate human testing is disabled. Agent tasks are defined through GitHub Issues, implemented on `agent/*` branches, validated by required checks, independently reviewed, and eligible for controlled auto-merge. Human acceptance is reserved for an official Release Candidate. See:
-
-- `docs/project/16-AUTONOMOUS-DEVELOPMENT-POLICY.md`
-- `docs/project/17-AUTOMATED-QUALITY-GATES.md`
-- `docs/development/ORCHESTRATOR-SETUP.md`
+Start with [`AGENTS.md`](AGENTS.md), then follow the authoritative project and management documents. Work is issue-driven on `agent/*` branches, validated by required checks, and independently reviewed. Human acceptance is reserved for an official Release Candidate unless a real protected decision or external-access blocker occurs.
