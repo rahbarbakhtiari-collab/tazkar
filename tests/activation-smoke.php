@@ -18,7 +18,7 @@ define( 'ABSPATH', $stub_root );
 
 $GLOBALS['wp_version']        = '7.0.2';
 $GLOBALS['tazkar_test_sql']   = array();
-$GLOBALS['tazkar_options']    = array();
+$GLOBALS['tazkar_options']    = array( 'tazkar_db_version' => '1' );
 $GLOBALS['tazkar_actions']    = array();
 $GLOBALS['tazkar_caps']       = array();
 $GLOBALS['activation_hook']   = null;
@@ -72,12 +72,18 @@ if ( ! is_callable( $GLOBALS['activation_hook'] ) ) {
 call_user_func( $GLOBALS['activation_hook'], false );
 call_user_func( $GLOBALS['activation_hook'], false );
 
-$checks = array(
+$batch_sql = $GLOBALS['tazkar_test_sql'][0] ?? '';
+$row_sql   = $GLOBALS['tazkar_test_sql'][1] ?? '';
+$checks    = array(
     8 === count( $GLOBALS['tazkar_test_sql'] ),
-    '1' === (string) ( $GLOBALS['tazkar_options']['tazkar_db_version'] ?? '' ),
-    '0.5.0-alpha.1' === (string) ( $GLOBALS['tazkar_options']['tazkar_version'] ?? '' ),
+    '2' === (string) ( $GLOBALS['tazkar_options']['tazkar_db_version'] ?? '' ),
+    '0.6.0-alpha.1' === (string) ( $GLOBALS['tazkar_options']['tazkar_version'] ?? '' ),
     7 === count( $GLOBALS['tazkar_caps'] ),
-    false !== strpos( $GLOBALS['tazkar_test_sql'][0] ?? '', 'custom_tazkar_import_batches' ),
+    false !== strpos( $batch_sql, 'custom_tazkar_import_batches' ),
+    false !== strpos( $batch_sql, 'next_row_number' ),
+    false !== strpos( $batch_sql, 'lock_expires_at' ),
+    false !== strpos( $row_sql, 'staged_payload longtext NULL' ),
+    false !== strpos( $row_sql, 'payload_removed_at' ),
     false !== strpos( $GLOBALS['tazkar_test_sql'][3] ?? '', 'custom_tazkar_favorites' ),
 );
 
