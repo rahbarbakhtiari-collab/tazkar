@@ -57,6 +57,10 @@ final class WordPressContentWriter implements RollbackAwareContentWriter {
 		$this->store_meta( $post_id, self::SNAPSHOT_META, $this->snapshot_hash( $post_id ) );
 	}
 
+	public function trash_available(): bool {
+		return ! defined( 'EMPTY_TRASH_DAYS' ) || (int) EMPTY_TRASH_DAYS > 0;
+	}
+
 	/** @return array{outcome:string,interactions:int} */
 	public function inspect_rollback( int $post_id, string $batch_uuid, int $row_id ): array {
 		if ( $post_id < 1 ) {
@@ -125,6 +129,13 @@ final class WordPressContentWriter implements RollbackAwareContentWriter {
 			);
 		}
 
+		if ( ! $this->trash_available() ) {
+			return array(
+				'outcome'      => self::ROLLBACK_TRASH_DISABLED,
+				'interactions' => $interactions,
+			);
+		}
+
 		return array(
 			'outcome'      => self::ROLLBACK_ELIGIBLE,
 			'interactions' => $interactions,
@@ -139,6 +150,9 @@ final class WordPressContentWriter implements RollbackAwareContentWriter {
 		}
 		if ( self::ROLLBACK_MISSING === $outcome ) {
 			return self::ROLLBACK_MISSING;
+		}
+		if ( ! $this->trash_available() ) {
+			return self::ROLLBACK_CONFLICT;
 		}
 		if ( self::ROLLBACK_ELIGIBLE !== $outcome ) {
 			return self::ROLLBACK_CONFLICT;

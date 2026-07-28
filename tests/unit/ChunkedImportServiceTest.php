@@ -43,10 +43,10 @@ final class ChunkedImportServiceTest extends TestCase {
 	}
 
 	public function test_interrupted_processing_row_is_recovered_without_duplicate_post(): void {
-		$repository = new TazkarTestChunkedRepository();
-		$writer     = new TazkarTestRollbackWriter();
-		$service    = $this->service( $repository, $writer );
-		$progress   = $service->stage( $this->csv_with_rows( 1 ), 'resume.csv', 8, 1 );
+		$repository                           = new TazkarTestChunkedRepository();
+		$writer                               = new TazkarTestRollbackWriter();
+		$service                              = $this->service( $repository, $writer );
+		$progress                             = $service->stage( $this->csv_with_rows( 1 ), 'resume.csv', 8, 1 );
 		$repository->rows[1]['status']        = 'processing';
 		$repository->rows[1]['attempt_count'] = 1;
 
@@ -84,7 +84,7 @@ final class ChunkedImportServiceTest extends TestCase {
 				return $row;
 			}
 		);
-		$progress = $service->stage( $path, 'html.csv', 9 );
+		$progress   = $service->stage( $path, 'html.csv', 9 );
 
 		self::assertSame( 'completed_with_errors', $progress->status() );
 		self::assertSame( 1, $progress->count( 'invalid' ) );
@@ -124,10 +124,10 @@ final class ChunkedImportServiceTest extends TestCase {
 	}
 
 	public function test_process_rechecks_batch_state_after_lock(): void {
-		$repository = new TazkarTestChunkedRepository();
-		$writer     = new TazkarTestRollbackWriter();
-		$service    = $this->service( $repository, $writer );
-		$progress   = $service->stage( $this->csv_with_rows( 1 ), 'race.csv', 9 );
+		$repository                    = new TazkarTestChunkedRepository();
+		$writer                        = new TazkarTestRollbackWriter();
+		$service                       = $this->service( $repository, $writer );
+		$progress                      = $service->stage( $this->csv_with_rows( 1 ), 'race.csv', 9 );
 		$repository->status_after_lock = 'rollback_processing';
 
 		$progress = $service->process( $progress->batch_uuid(), 9 );
@@ -137,12 +137,49 @@ final class ChunkedImportServiceTest extends TestCase {
 		self::assertCount( 0, $writer->created );
 	}
 
+
+	public function test_process_waits_when_shared_deduplication_lock_is_unavailable(): void {
+		$repository                               = new TazkarTestChunkedRepository();
+		$writer                                   = new TazkarTestRollbackWriter();
+		$service                                  = $this->service( $repository, $writer );
+		$progress                                 = $service->stage( $this->csv_with_rows( 1 ), 'dedup-lock.csv', 9 );
+		$repository->deduplication_lock_available = false;
+
+		$progress = $service->process( $progress->batch_uuid(), 9 );
+
+		self::assertSame( 1, $progress->count( 'pending' ) );
+		self::assertSame( 0, $progress->count( 'imported' ) );
+		self::assertCount( 0, $writer->created );
+	}
+
+	public function test_rollback_is_rejected_when_wordpress_trash_is_disabled(): void {
+		$repository            = new TazkarTestChunkedRepository();
+		$writer                = new TazkarTestRollbackWriter();
+		$service               = $this->service( $repository, $writer );
+		$progress              = $service->stage( $this->csv_with_rows( 1 ), 'trash-disabled.csv', 9 );
+		$progress              = $service->process( $progress->batch_uuid(), 9 );
+		$writer->trash_enabled = false;
+
+		$preview = $service->rollback_preview( $progress->batch_uuid(), 9 );
+		self::assertSame( 1, $preview['trash_disabled'] );
+
+		try {
+			$service->rollback( $progress->batch_uuid(), 9 );
+			self::fail( 'Rollback should be rejected when Trash is disabled.' );
+		} catch ( RuntimeException $exception ) {
+			self::assertStringContainsString( 'Trash is disabled', $exception->getMessage() );
+		}
+
+		self::assertSame( 'imported', $repository->rows[1]['status'] );
+		self::assertCount( 0, $writer->rollback_calls );
+	}
+
 	public function test_rollback_preview_is_non_mutating_and_reports_classifications(): void {
-		$repository = new TazkarTestChunkedRepository();
-		$writer     = new TazkarTestRollbackWriter();
-		$service    = $this->service( $repository, $writer );
-		$progress   = $service->stage( $this->csv_with_rows( 2 ), 'preview-rollback.csv', 10, 2 );
-		$progress   = $service->process( $progress->batch_uuid(), 10 );
+		$repository                       = new TazkarTestChunkedRepository();
+		$writer                           = new TazkarTestRollbackWriter();
+		$service                          = $this->service( $repository, $writer );
+		$progress                         = $service->stage( $this->csv_with_rows( 2 ), 'preview-rollback.csv', 10, 2 );
+		$progress                         = $service->process( $progress->batch_uuid(), 10 );
 		$writer->inspection_outcomes[101] = RollbackAwareContentWriter::ROLLBACK_ELIGIBLE;
 		$writer->inspection_outcomes[102] = RollbackAwareContentWriter::ROLLBACK_PUBLISHED;
 		$writer->interaction_counts[102]  = 3;
@@ -185,7 +222,7 @@ final class ChunkedImportServiceTest extends TestCase {
 
 		$writer->rollback_outcomes[101] = RollbackAwareContentWriter::ROLLBACK_TRASHED;
 		$writer->rollback_outcomes[102] = RollbackAwareContentWriter::ROLLBACK_CONFLICT;
-		$progress = $service->rollback( $progress->batch_uuid(), 10 );
+		$progress                       = $service->rollback( $progress->batch_uuid(), 10 );
 
 		self::assertSame( 'rollback_with_conflicts', $progress->status() );
 		self::assertSame( 1, $progress->count( 'rollback_conflicts' ) );
@@ -218,7 +255,7 @@ final class ChunkedImportServiceTest extends TestCase {
 		$path = tempnam( sys_get_temp_dir(), 'tazkar-chunked-' );
 		self::assertIsString( $path );
 		$this->temporary_files[] = $path;
-		$handle = fopen( $path, 'wb' );
+		$handle                  = fopen( $path, 'wb' );
 		self::assertIsResource( $handle );
 		$headers = ContractSchema::columns();
 		fputcsv( $handle, $headers, ',', '"', '' );
@@ -253,10 +290,12 @@ final class TazkarTestChunkedRepository implements ChunkedImportRepository {
 	/** @var array<int, array<string, mixed>> */
 	public array $rows = array();
 	/** @var array<string, mixed> */
-	public array $batch = array();
-	private bool $locked = false;
-	private bool $user_locked = false;
-	public ?string $status_after_lock = null;
+	public array $batch                       = array();
+	private bool $locked                      = false;
+	private bool $user_locked                 = false;
+	private bool $deduplication_locked        = false;
+	public bool $deduplication_lock_available = true;
+	public ?string $status_after_lock         = null;
 
 	public function create_staged_batch(
 		string $filename,
@@ -277,7 +316,11 @@ final class TazkarTestChunkedRepository implements ChunkedImportRepository {
 			'repeated_source' => false,
 		);
 
-		return array( 'id' => 1, 'uuid' => (string) $this->batch['batch_uuid'], 'repeated_source' => false );
+		return array(
+			'id'              => 1,
+			'uuid'            => (string) $this->batch['batch_uuid'],
+			'repeated_source' => false,
+		);
 	}
 
 	public function stage_row(
@@ -290,7 +333,7 @@ final class TazkarTestChunkedRepository implements ChunkedImportRepository {
 		string $payload_hash,
 		?string $staged_payload
 	): void {
-		$id = count( $this->rows ) + 1;
+		$id                = count( $this->rows ) + 1;
 		$this->rows[ $id ] = array(
 			'id'                  => $id,
 			'batch_id'            => $batch_id,
@@ -334,6 +377,19 @@ final class TazkarTestChunkedRepository implements ChunkedImportRepository {
 			&& in_array( (string) ( $this->batch['status'] ?? '' ), array( 'staged', 'processing', 'rollback_processing' ), true );
 	}
 
+	public function acquire_deduplication_lock(): bool {
+		if ( ! $this->deduplication_lock_available || $this->deduplication_locked ) {
+			return false;
+		}
+		$this->deduplication_locked = true;
+
+		return true;
+	}
+
+	public function release_deduplication_lock(): void {
+		$this->deduplication_locked = false;
+	}
+
 	public function acquire_lock( int $batch_id, string $token, string $expires_at ): bool {
 		unset( $batch_id, $token, $expires_at );
 		if ( $this->locked ) {
@@ -341,7 +397,7 @@ final class TazkarTestChunkedRepository implements ChunkedImportRepository {
 		}
 		$this->locked = true;
 		if ( null !== $this->status_after_lock ) {
-			$this->batch['status'] = $this->status_after_lock;
+			$this->batch['status']   = $this->status_after_lock;
 			$this->status_after_lock = null;
 		}
 		return true;
@@ -526,11 +582,15 @@ final class TazkarTestRollbackWriter implements RollbackAwareContentWriter {
 	public array $interaction_counts = array();
 	/** @var int[] */
 	public array $rollback_calls = array();
-	private int $next_post_id = 101;
+	public bool $trash_enabled   = true;
+	private int $next_post_id    = 101;
 
 	public function create_draft( array $row, int $author_id ): int {
-		$post_id = $this->next_post_id++;
-		$this->created[ $post_id ] = array( 'row' => $row, 'author_id' => $author_id );
+		$post_id                   = $this->next_post_id++;
+		$this->created[ $post_id ] = array(
+			'row'       => $row,
+			'author_id' => $author_id,
+		);
 		return $post_id;
 	}
 
@@ -543,17 +603,26 @@ final class TazkarTestRollbackWriter implements RollbackAwareContentWriter {
 		$this->created[ $post_id ]['row_id']     = $row_id;
 	}
 
+	public function trash_available(): bool {
+		return $this->trash_enabled;
+	}
+
 	public function inspect_rollback( int $post_id, string $batch_uuid, int $row_id ): array {
 		unset( $batch_uuid, $row_id );
 
 		return array(
-			'outcome'      => $this->inspection_outcomes[ $post_id ] ?? self::ROLLBACK_ELIGIBLE,
+			'outcome'      => $this->trash_enabled
+				? ( $this->inspection_outcomes[ $post_id ] ?? self::ROLLBACK_ELIGIBLE )
+				: self::ROLLBACK_TRASH_DISABLED,
 			'interactions' => $this->interaction_counts[ $post_id ] ?? 0,
 		);
 	}
 
 	public function rollback_owned_draft( int $post_id, string $batch_uuid, int $row_id ): string {
 		unset( $batch_uuid, $row_id );
+		if ( ! $this->trash_enabled ) {
+			return self::ROLLBACK_CONFLICT;
+		}
 		$this->rollback_calls[] = $post_id;
 		return $this->rollback_outcomes[ $post_id ] ?? self::ROLLBACK_TRASHED;
 	}

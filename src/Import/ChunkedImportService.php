@@ -159,11 +159,16 @@ final class ChunkedImportService {
 			return $this->progress( $batch_uuid, $user_id );
 		}
 
+		$deduplication_locked = false;
 		try {
 			$batch = $this->require_batch( $batch_uuid, $user_id );
 			if ( ! in_array( (string) $batch['status'], array( 'staged', 'processing' ), true ) ) {
 				return $this->progress( $batch_uuid, $user_id );
 			}
+			if ( ! $this->repository->acquire_deduplication_lock() ) {
+				return $this->progress( $batch_uuid, $user_id );
+			}
+			$deduplication_locked = true;
 
 			$this->repository->recover_processing_rows( (int) $batch['id'] );
 			$rows = $this->repository->pending_rows(
@@ -183,6 +188,9 @@ final class ChunkedImportService {
 
 			$this->synchronize_batch( (int) $batch['id'], 'processing' );
 		} finally {
+			if ( $deduplication_locked ) {
+				$this->repository->release_deduplication_lock();
+			}
 			$this->repository->release_lock( (int) $batch['id'], $token );
 		}
 
@@ -208,6 +216,7 @@ final class ChunkedImportService {
 			'foreign'          => 0,
 			'other_conflicts'  => 0,
 			'already_trashed'  => 0,
+			'trash_disabled'   => 0,
 			'interactions'     => 0,
 		);
 
@@ -252,6 +261,9 @@ final class ChunkedImportService {
 				case RollbackAwareContentWriter::ROLLBACK_ALREADY_TRASHED:
 					++$counts['already_trashed'];
 					break;
+				case RollbackAwareContentWriter::ROLLBACK_TRASH_DISABLED:
+					++$counts['trash_disabled'];
+					break;
 				default:
 					++$counts['other_conflicts'];
 					break;
@@ -265,6 +277,9 @@ final class ChunkedImportService {
 		$batch = $this->require_batch( $batch_uuid, $user_id );
 		if ( in_array( (string) $batch['status'], array( 'rolled_back', 'rollback_with_conflicts' ), true ) ) {
 			return $this->progress( $batch_uuid, $user_id );
+		}
+		if ( ! $this->content_writer->trash_available() ) {
+			throw new RuntimeException( 'WordPress Trash is disabled; rollback was rejected to prevent permanent deletion.' );
 		}
 
 		$token = bin2hex( random_bytes( 32 ) );

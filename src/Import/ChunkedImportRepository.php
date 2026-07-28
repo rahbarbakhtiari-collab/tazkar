@@ -35,6 +35,10 @@ interface ChunkedImportRepository {
 
 	public function has_active_batch( int $user_id ): bool;
 
+	public function acquire_deduplication_lock(): bool;
+
+	public function release_deduplication_lock(): void;
+
 	public function acquire_lock( int $batch_id, string $token, string $expires_at ): bool;
 
 	public function release_lock( int $batch_id, string $token ): void;

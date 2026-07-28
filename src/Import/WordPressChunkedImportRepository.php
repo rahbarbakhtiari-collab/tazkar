@@ -42,6 +42,27 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 
 		return is_numeric( $value ) && (int) $value > 0;
 	}
+
+	public function acquire_deduplication_lock(): bool {
+		global $wpdb;
+		/** @var \wpdb $wpdb */
+
+		$value = $wpdb->get_var(
+			$wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $this->deduplication_lock_name() )
+		);
+
+		return 1 === (int) $value;
+	}
+
+	public function release_deduplication_lock(): void {
+		global $wpdb;
+		/** @var \wpdb $wpdb */
+
+		$wpdb->get_var(
+			$wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $this->deduplication_lock_name() )
+		);
+	}
+
 	/** @return array{id:int,uuid:string,repeated_source:bool} */
 	public function create_staged_batch(
 		string $filename,
@@ -560,6 +581,13 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 		}
 	}
 
+
+	private function deduplication_lock_name(): string {
+		global $wpdb;
+		/** @var \wpdb $wpdb */
+
+		return 'tazkar-dedup-' . substr( hash( 'sha256', $wpdb->prefix ), 0, 40 );
+	}
 
 	private function user_import_lock_name( int $user_id ): string {
 		global $wpdb;

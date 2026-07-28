@@ -416,10 +416,15 @@ final class CsvPreviewPage {
 				<tr><th><?php echo esc_html__( 'تأییدشده — حفظ می‌شود', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['approved'] ?? 0 ) ); ?></td></tr>
 				<tr><th><?php echo esc_html__( 'ویرایش‌شده — حفظ می‌شود', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['edited'] ?? 0 ) ); ?></td></tr>
 				<tr><th><?php echo esc_html__( 'گم‌شده یا با مالکیت متفاوت — تعارض', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( ( $preview['missing'] ?? 0 ) + ( $preview['foreign'] ?? 0 ) + ( $preview['other_conflicts'] ?? 0 ) ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'زباله‌دان غیرفعال — بازگردانی رد می‌شود', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['trash_disabled'] ?? 0 ) ); ?></td></tr>
 				<tr><th><?php echo esc_html__( 'تعامل‌های ثبت‌شده', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['interactions'] ?? 0 ) ); ?></td></tr>
 			</tbody></table>
 			<p><?php echo esc_html__( 'با تأیید زیر، فقط پیش‌نویس‌های بدون تغییر و متعلق به همین بسته به زباله‌دان منتقل می‌شوند؛ موارد منتشرشده، تأییدشده، ویرایش‌شده یا دارای تعارض حفظ خواهند شد.', 'tazkar' ); ?></p>
-			<?php $this->render_batch_action_form( $batch_uuid, 'rollback', __( 'تأیید و اجرای بازگردانی', 'tazkar' ), 'delete', true ); ?>
+			<?php if ( 0 === (int) ( $preview['trash_disabled'] ?? 0 ) ) : ?>
+				<?php $this->render_batch_action_form( $batch_uuid, 'rollback', __( 'تأیید و اجرای بازگردانی', 'tazkar' ), 'delete', true ); ?>
+			<?php else : ?>
+				<p><strong><?php echo esc_html__( 'تا زمانی که WordPress Trash غیرفعال است، اجرای بازگردانی برای جلوگیری از حذف دائمی مسدود می‌ماند.', 'tazkar' ); ?></strong></p>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
