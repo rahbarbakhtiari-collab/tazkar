@@ -76,18 +76,18 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 		$ok       = $wpdb->insert(
 			$table,
 			array(
-				'batch_id'          => $batch_id,
-				'row_number'        => $row_number,
-				'record_id'         => $record_id,
-				'status'            => $status,
-				'error_code'        => $error_code,
-				'wp_post_id'        => $post_id,
-				'payload_hash'      => $payload_hash,
-				'staged_payload'    => $staged_payload,
-				'terminal_at'       => $terminal,
+				'batch_id'           => $batch_id,
+				'row_number'         => $row_number,
+				'record_id'          => $record_id,
+				'status'             => $status,
+				'error_code'         => $error_code,
+				'wp_post_id'         => $post_id,
+				'payload_hash'       => $payload_hash,
+				'staged_payload'     => $staged_payload,
+				'terminal_at'        => $terminal,
 				'payload_removed_at' => $removed,
-				'created_at'        => $now,
-				'updated_at'        => $now,
+				'created_at'         => $now,
+				'updated_at'         => $now,
 			),
 			array( '%d', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
@@ -170,8 +170,8 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 		global $wpdb;
 		/** @var \wpdb $wpdb */
 
-		$table = Schema::table_names( $wpdb->prefix )['import_rows'];
-		$wpdb->query(
+		$table  = Schema::table_names( $wpdb->prefix )['import_rows'];
+		$result = $wpdb->query(
 			$wpdb->prepare(
 				"UPDATE %i SET status = 'pending', claimed_at = NULL, updated_at = %s WHERE batch_id = %d AND status = 'processing'",
 				$table,
@@ -179,6 +179,9 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 				$batch_id
 			)
 		);
+		if ( false === $result ) {
+			throw new RuntimeException( 'Interrupted import rows could not be recovered.' );
+		}
 	}
 
 	/** @return array<int, array<string, mixed>> */
@@ -252,13 +255,17 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 	public function begin_row(): void {
 		global $wpdb;
 		/** @var \wpdb $wpdb */
-		$wpdb->query( 'START TRANSACTION' );
+		if ( false === $wpdb->query( 'START TRANSACTION' ) ) {
+			throw new RuntimeException( 'Import transaction could not be started.' );
+		}
 	}
 
 	public function commit_row(): void {
 		global $wpdb;
 		/** @var \wpdb $wpdb */
-		$wpdb->query( 'COMMIT' );
+		if ( false === $wpdb->query( 'COMMIT' ) ) {
+			throw new RuntimeException( 'Import transaction could not be committed.' );
+		}
 	}
 
 	public function rollback_row(): void {
@@ -387,9 +394,9 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 		$table = Schema::table_names( $wpdb->prefix )['import_rows'];
 		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, row_number, record_id, status, error_code, wp_post_id, payload_hash,
+				'SELECT id, row_number, record_id, status, error_code, wp_post_id, payload_hash,
 				attempt_count, rollback_status, rollback_error_code, terminal_at, payload_removed_at
-				FROM %i WHERE batch_id = %d ORDER BY row_number ASC",
+				FROM %i WHERE batch_id = %d ORDER BY row_number ASC',
 				$table,
 				$batch_id
 			),
