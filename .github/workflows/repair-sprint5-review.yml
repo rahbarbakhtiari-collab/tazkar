@@ -1,0 +1,588 @@
+name: Repair Sprint 5 review findings
+
+on:
+  push:
+    branches:
+      - agent/17-sprint-5-chunk-resume-rollback
+    paths:
+      - .github/workflows/repair-sprint5-review.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/17-sprint-5-chunk-resume-rollback
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --prefer-dist --no-progress --quiet
+      - name: Address active-batch, rollback-preview, and lock-state findings
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one anchor, found {count}: {old[:80]!r}')
+              file.write_text(text.replace(old, new, 1), encoding='utf-8')
+          
+          # Repository contract: serialize creation per user and check active state.
+          replace_once(
+              'src/Import/ChunkedImportRepository.php',
+              "\tpublic function get_owned_batch( string $batch_uuid, int $user_id ): ?array;\n\n\tpublic function acquire_lock",
+              "\tpublic function get_owned_batch( string $batch_uuid, int $user_id ): ?array;\n\n\tpublic function acquire_user_import_lock( int $user_id ): bool;\n\n\tpublic function release_user_import_lock( int $user_id ): void;\n\n\tpublic function has_active_batch( int $user_id ): bool;\n\n\tpublic function acquire_lock",
+          )
+          
+          repository_methods = r'''
+          	public function acquire_user_import_lock( int $user_id ): bool {
+          		global $wpdb;
+          		/** @var \wpdb $wpdb */
+          
+          		$value = $wpdb->get_var(
+          			$wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $this->user_import_lock_name( $user_id ) )
+          		);
+          
+          		return 1 === (int) $value;
+          	}
+          
+          	public function release_user_import_lock( int $user_id ): void {
+          		global $wpdb;
+          		/** @var \wpdb $wpdb */
+          
+          		$wpdb->get_var(
+          			$wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $this->user_import_lock_name( $user_id ) )
+          		);
+          	}
+          
+          	public function has_active_batch( int $user_id ): bool {
+          		global $wpdb;
+          		/** @var \wpdb $wpdb */
+          
+          		$table = Schema::table_names( $wpdb->prefix )['import_batches'];
+          		$value = $wpdb->get_var(
+          			$wpdb->prepare(
+          				"SELECT id FROM %i WHERE created_by = %d AND status IN ('staged','processing','rollback_processing') LIMIT 1",
+          				$table,
+          				$user_id
+          			)
+          		);
+          
+          		return is_numeric( $value ) && (int) $value > 0;
+          	}
+          '''
+          replace_once(
+              'src/Import/WordPressChunkedImportRepository.php',
+              "final class WordPressChunkedImportRepository implements ChunkedImportRepository {\n",
+              "final class WordPressChunkedImportRepository implements ChunkedImportRepository {\n" + repository_methods,
+          )
+          repo_path = Path('src/Import/WordPressChunkedImportRepository.php')
+          repo_text = repo_path.read_text(encoding='utf-8')
+          lock_helper = r'''
+          
+          	private function user_import_lock_name( int $user_id ): string {
+          		global $wpdb;
+          		/** @var \wpdb $wpdb */
+          
+          		return 'tazkar-import-' . substr( hash( 'sha256', $wpdb->prefix . '|' . $user_id ), 0, 40 );
+          	}
+          '''
+          if not repo_text.endswith("}\n"):
+              raise SystemExit('WordPressChunkedImportRepository.php has unexpected ending')
+          repo_path.write_text(repo_text[:-2] + lock_helper + "}\n", encoding='utf-8')
+          
+          # Service: hold the per-user advisory lock through transaction commit.
+          replace_once(
+              'src/Import/ChunkedImportService.php',
+              "\t\t$this->repository->begin_row();\n\t\ttry {\n\t\t\t$batch = $this->repository->create_staged_batch(",
+              "\t\tif ( ! $this->repository->acquire_user_import_lock( $user_id ) ) {\n\t\t\tthrow new RuntimeException( 'Another import is currently being prepared for this user.' );\n\t\t}\n\n\t\ttry {\n\t\t\t$this->repository->begin_row();\n\t\t\ttry {\n\t\t\t\tif ( $this->repository->has_active_batch( $user_id ) ) {\n\t\t\t\t\tthrow new RuntimeException( 'Finish or roll back the active import before staging another file.' );\n\t\t\t\t}\n\n\t\t\t\t$batch = $this->repository->create_staged_batch(",
+          )
+          replace_once(
+              'src/Import/ChunkedImportService.php',
+              "\t\t\t$this->repository->commit_row();\n\t\t} catch ( \\Throwable $exception ) {\n\t\t\t$this->repository->rollback_row();\n\t\t\tthrow $exception;\n\t\t}\n\n\t\treturn $this->progress",
+              "\t\t\t\t$this->repository->commit_row();\n\t\t\t} catch ( \\Throwable $exception ) {\n\t\t\t\t$this->repository->rollback_row();\n\t\t\t\tthrow $exception;\n\t\t\t}\n\t\t} finally {\n\t\t\t$this->repository->release_user_import_lock( $user_id );\n\t\t}\n\n\t\treturn $this->progress",
+          )
+          
+          # Service: re-read state after acquiring the batch lock to close process/rollback race.
+          replace_once(
+              'src/Import/ChunkedImportService.php',
+              "\t\ttry {\n\t\t\t$this->repository->recover_processing_rows( (int) $batch['id'] );\n\t\t\t$rows = $this->repository->pending_rows(",
+              "\t\ttry {\n\t\t\t$batch = $this->require_batch( $batch_uuid, $user_id );\n\t\t\tif ( ! in_array( (string) $batch['status'], array( 'staged', 'processing' ), true ) ) {\n\t\t\t\treturn $this->progress( $batch_uuid, $user_id );\n\t\t\t}\n\n\t\t\t$this->repository->recover_processing_rows( (int) $batch['id'] );\n\t\t\t$rows = $this->repository->pending_rows(",
+          )
+          
+          rollback_preview_method = r'''
+          	/** @return array<string, int> */
+          	public function rollback_preview( string $batch_uuid, int $user_id ): array {
+          		$batch  = $this->require_batch( $batch_uuid, $user_id );
+          		$counts = array(
+          			'total_candidates' => 0,
+          			'pending'          => 0,
+          			'eligible_drafts'  => 0,
+          			'published'        => 0,
+          			'approved'         => 0,
+          			'edited'           => 0,
+          			'missing'          => 0,
+          			'foreign'          => 0,
+          			'other_conflicts'  => 0,
+          			'already_trashed'  => 0,
+          			'interactions'     => 0,
+          		);
+          
+          		foreach ( $this->repository->rows( (int) $batch['id'] ) as $row ) {
+          			$status = (string) ( $row['status'] ?? '' );
+          			if ( in_array( $status, array( 'pending', 'processing' ), true ) ) {
+          				++$counts['total_candidates'];
+          				++$counts['pending'];
+          				continue;
+          			}
+          			if ( 'imported' !== $status ) {
+          				continue;
+          			}
+          
+          			++$counts['total_candidates'];
+          			$inspection = $this->content_writer->inspect_rollback(
+          				(int) ( $row['wp_post_id'] ?? 0 ),
+          				$batch_uuid,
+          				(int) ( $row['id'] ?? 0 )
+          			);
+          			$counts['interactions'] += max( 0, (int) ( $inspection['interactions'] ?? 0 ) );
+          
+          			switch ( (string) ( $inspection['outcome'] ?? '' ) ) {
+          				case RollbackAwareContentWriter::ROLLBACK_ELIGIBLE:
+          					++$counts['eligible_drafts'];
+          					break;
+          				case RollbackAwareContentWriter::ROLLBACK_PUBLISHED:
+          					++$counts['published'];
+          					break;
+          				case RollbackAwareContentWriter::ROLLBACK_APPROVED:
+          					++$counts['approved'];
+          					break;
+          				case RollbackAwareContentWriter::ROLLBACK_EDITED:
+          					++$counts['edited'];
+          					break;
+          				case RollbackAwareContentWriter::ROLLBACK_MISSING:
+          					++$counts['missing'];
+          					break;
+          				case RollbackAwareContentWriter::ROLLBACK_FOREIGN:
+          					++$counts['foreign'];
+          					break;
+          				case RollbackAwareContentWriter::ROLLBACK_ALREADY_TRASHED:
+          					++$counts['already_trashed'];
+          					break;
+          				default:
+          					++$counts['other_conflicts'];
+          					break;
+          			}
+          		}
+          
+          		return $counts;
+          	}
+          
+          '''
+          replace_once(
+              'src/Import/ChunkedImportService.php',
+              "\tpublic function rollback( string $batch_uuid, int $user_id ): ChunkedImportProgress {",
+              rollback_preview_method + "\tpublic function rollback( string $batch_uuid, int $user_id ): ChunkedImportProgress {",
+          )
+          
+          # Rollback writer contract and non-mutating inspection classifications.
+          replace_once(
+              'src/Import/RollbackAwareContentWriter.php',
+              "\tpublic const ROLLBACK_TRASHED         = 'trashed';\n\tpublic const ROLLBACK_ALREADY_TRASHED = 'already_trashed';\n\tpublic const ROLLBACK_CONFLICT        = 'conflict';\n\tpublic const ROLLBACK_MISSING         = 'missing';",
+              "\tpublic const ROLLBACK_ELIGIBLE        = 'eligible';\n\tpublic const ROLLBACK_TRASHED         = 'trashed';\n\tpublic const ROLLBACK_ALREADY_TRASHED = 'already_trashed';\n\tpublic const ROLLBACK_PUBLISHED       = 'published';\n\tpublic const ROLLBACK_APPROVED        = 'approved';\n\tpublic const ROLLBACK_EDITED          = 'edited';\n\tpublic const ROLLBACK_FOREIGN         = 'foreign';\n\tpublic const ROLLBACK_CONFLICT        = 'conflict';\n\tpublic const ROLLBACK_MISSING         = 'missing';",
+          )
+          replace_once(
+              'src/Import/RollbackAwareContentWriter.php',
+              "\tpublic function mark_import_ownership( int $post_id, string $batch_uuid, int $row_id ): void;\n\n\tpublic function rollback_owned_draft",
+              "\tpublic function mark_import_ownership( int $post_id, string $batch_uuid, int $row_id ): void;\n\n\t/** @return array{outcome:string,interactions:int} */\n\tpublic function inspect_rollback( int $post_id, string $batch_uuid, int $row_id ): array;\n\n\tpublic function rollback_owned_draft",
+          )
+          
+          replace_once(
+              'src/Import/WordPressContentWriter.php',
+              "use Tazkar\\Content\\Taxonomies;",
+              "use Tazkar\\Content\\Taxonomies;\nuse Tazkar\\Infrastructure\\Database\\Schema;",
+          )
+          old_rollback = r'''
+          	public function rollback_owned_draft( int $post_id, string $batch_uuid, int $row_id ): string {
+          		if ( $post_id < 1 ) {
+          			return self::ROLLBACK_MISSING;
+          		}
+          
+          		$post = get_post( $post_id );
+          		if ( ! $post instanceof \WP_Post ) {
+          			return self::ROLLBACK_MISSING;
+          		}
+          		if ( ContentType::POST_TYPE !== $post->post_type ) {
+          			return self::ROLLBACK_CONFLICT;
+          		}
+          
+          		$stored_batch = (string) get_post_meta( $post_id, self::BATCH_OWNER_META, true );
+          		$stored_row   = (int) get_post_meta( $post_id, self::ROW_OWNER_META, true );
+          		if ( $stored_batch !== $batch_uuid || $stored_row !== $row_id ) {
+          			return self::ROLLBACK_CONFLICT;
+          		}
+          		if ( 'trash' === $post->post_status ) {
+          			return self::ROLLBACK_ALREADY_TRASHED;
+          		}
+          
+          		$review_status = (string) get_post_meta( $post_id, MetaRegistry::key( 'review_status' ), true );
+          		if ( 'draft' !== $post->post_status || 'approved' === $review_status ) {
+          			return self::ROLLBACK_CONFLICT;
+          		}
+          
+          		$stored_snapshot = (string) get_post_meta( $post_id, self::SNAPSHOT_META, true );
+          		if ( '' === $stored_snapshot || ! hash_equals( $stored_snapshot, $this->snapshot_hash( $post_id ) ) ) {
+          			return self::ROLLBACK_CONFLICT;
+          		}
+          
+          		$trashed = wp_trash_post( $post_id );
+          
+          		return false === $trashed ? self::ROLLBACK_CONFLICT : self::ROLLBACK_TRASHED;
+          	}
+          '''
+          new_rollback = r'''
+          	/** @return array{outcome:string,interactions:int} */
+          	public function inspect_rollback( int $post_id, string $batch_uuid, int $row_id ): array {
+          		if ( $post_id < 1 ) {
+          			return array( 'outcome' => self::ROLLBACK_MISSING, 'interactions' => 0 );
+          		}
+          
+          		$post = get_post( $post_id );
+          		if ( ! $post instanceof \WP_Post ) {
+          			return array( 'outcome' => self::ROLLBACK_MISSING, 'interactions' => 0 );
+          		}
+          
+          		$interactions = $this->interaction_count( $post_id );
+          		if ( ContentType::POST_TYPE !== $post->post_type ) {
+          			return array( 'outcome' => self::ROLLBACK_FOREIGN, 'interactions' => $interactions );
+          		}
+          
+          		$stored_batch = (string) get_post_meta( $post_id, self::BATCH_OWNER_META, true );
+          		$stored_row   = (int) get_post_meta( $post_id, self::ROW_OWNER_META, true );
+          		if ( $stored_batch !== $batch_uuid || $stored_row !== $row_id ) {
+          			return array( 'outcome' => self::ROLLBACK_FOREIGN, 'interactions' => $interactions );
+          		}
+          		if ( 'trash' === $post->post_status ) {
+          			return array( 'outcome' => self::ROLLBACK_ALREADY_TRASHED, 'interactions' => $interactions );
+          		}
+          		if ( 'publish' === $post->post_status ) {
+          			return array( 'outcome' => self::ROLLBACK_PUBLISHED, 'interactions' => $interactions );
+          		}
+          		if ( 'draft' !== $post->post_status ) {
+          			return array( 'outcome' => self::ROLLBACK_CONFLICT, 'interactions' => $interactions );
+          		}
+          
+          		$review_status = (string) get_post_meta( $post_id, MetaRegistry::key( 'review_status' ), true );
+          		if ( 'approved' === $review_status ) {
+          			return array( 'outcome' => self::ROLLBACK_APPROVED, 'interactions' => $interactions );
+          		}
+          
+          		$stored_snapshot = (string) get_post_meta( $post_id, self::SNAPSHOT_META, true );
+          		if ( '' === $stored_snapshot || ! hash_equals( $stored_snapshot, $this->snapshot_hash( $post_id ) ) ) {
+          			return array( 'outcome' => self::ROLLBACK_EDITED, 'interactions' => $interactions );
+          		}
+          
+          		return array( 'outcome' => self::ROLLBACK_ELIGIBLE, 'interactions' => $interactions );
+          	}
+          
+          	public function rollback_owned_draft( int $post_id, string $batch_uuid, int $row_id ): string {
+          		$inspection = $this->inspect_rollback( $post_id, $batch_uuid, $row_id );
+          		$outcome    = $inspection['outcome'];
+          		if ( self::ROLLBACK_ALREADY_TRASHED === $outcome ) {
+          			return self::ROLLBACK_ALREADY_TRASHED;
+          		}
+          		if ( self::ROLLBACK_MISSING === $outcome ) {
+          			return self::ROLLBACK_MISSING;
+          		}
+          		if ( self::ROLLBACK_ELIGIBLE !== $outcome ) {
+          			return self::ROLLBACK_CONFLICT;
+          		}
+          
+          		$trashed = wp_trash_post( $post_id );
+          
+          		return false === $trashed ? self::ROLLBACK_CONFLICT : self::ROLLBACK_TRASHED;
+          	}
+          '''
+          replace_once('src/Import/WordPressContentWriter.php', old_rollback, new_rollback)
+          
+          interaction_method = r'''
+          	private function interaction_count( int $post_id ): int {
+          		global $wpdb;
+          		/** @var \wpdb $wpdb */
+          
+          		$tables    = Schema::table_names( $wpdb->prefix );
+          		$feedback  = $wpdb->get_var(
+          			$wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE item_id = %d', $tables['feedback'], $post_id )
+          		);
+          		$favorites = $wpdb->get_var(
+          			$wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE item_id = %d', $tables['favorites'], $post_id )
+          		);
+          
+          		return max( 0, (int) get_comments_number( $post_id ) )
+          			+ max( 0, (int) $feedback )
+          			+ max( 0, (int) $favorites );
+          	}
+          
+          '''
+          replace_once(
+              'src/Import/WordPressContentWriter.php',
+              "\tprivate function snapshot_hash( int $post_id ): string {",
+              interaction_method + "\tprivate function snapshot_hash( int $post_id ): string {",
+          )
+          
+          # Admin: preview endpoint, explicit confirmation, and preview display.
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\tadd_action( 'admin_post_tazkar_import_resume', array( $this, 'resume_import' ) );\n\t\tadd_action( 'admin_post_tazkar_import_rollback',",
+              "\t\tadd_action( 'admin_post_tazkar_import_resume', array( $this, 'resume_import' ) );\n\t\tadd_action( 'admin_post_tazkar_import_rollback_preview', array( $this, 'preview_rollback' ) );\n\t\tadd_action( 'admin_post_tazkar_import_rollback',",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\t$preview_result = null;\n\t\t$progress       = null;\n\t\t$error          = null;",
+              "\t\t$preview_result   = null;\n\t\t$progress         = null;\n\t\t$rollback_preview = null;\n\t\t$error            = null;",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\t\ttry {\n\t\t\t\t$progress = $this->import_service->progress( $batch_uuid, get_current_user_id() );\n\t\t\t} catch",
+              "\t\t\ttry {\n\t\t\t\t$progress = $this->import_service->progress( $batch_uuid, get_current_user_id() );\n\t\t\t\tif ( $this->request_rollback_preview() ) {\n\t\t\t\t\t$rollback_preview = $this->import_service->rollback_preview( $batch_uuid, get_current_user_id() );\n\t\t\t\t}\n\t\t\t} catch",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\t$this->render_page( $preview_result, $progress, $error );",
+              "\t\t$this->render_page( $preview_result, $progress, $rollback_preview, $error );",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\tpublic function rollback_import(): void {\n\t\t$this->handle_batch_action( 'rollback' );\n\t}",
+              "\tpublic function preview_rollback(): void {\n\t\t$this->handle_batch_action( 'rollback_preview' );\n\t}\n\n\tpublic function rollback_import(): void {\n\t\tif ( ! $this->request_rollback_confirmation() ) {\n\t\t\t$this->render_action_error( new RuntimeException( 'Rollback requires explicit administrator confirmation.' ) );\n\t\t\treturn;\n\t\t}\n\t\t$this->handle_batch_action( 'rollback' );\n\t}",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\t\tif ( 'rollback' === $action ) {\n\t\t\t\t$this->import_service->rollback( $batch_uuid, get_current_user_id() );\n\t\t\t} elseif ( 'resume' === $action ) {",
+              "\t\t\tif ( 'rollback_preview' === $action ) {\n\t\t\t\t$this->import_service->rollback_preview( $batch_uuid, get_current_user_id() );\n\t\t\t} elseif ( 'rollback' === $action ) {\n\t\t\t\t$this->import_service->rollback( $batch_uuid, get_current_user_id() );\n\t\t\t} elseif ( 'resume' === $action ) {",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\t$this->redirect_to_batch( $batch_uuid );\n\t}\n\n\t/** @param array<string, mixed> $source Request source. */",
+              "\t\t$this->redirect_to_batch( $batch_uuid, 'rollback_preview' === $action );\n\t}\n\n\tprivate function request_rollback_preview(): bool {\n\t\t$value = $_GET['rollback_preview'] ?? '';\n\n\t\treturn is_scalar( $value ) && '1' === sanitize_text_field( wp_unslash( (string) $value ) );\n\t}\n\n\tprivate function request_rollback_confirmation(): bool {\n\t\t$value = $_POST['tazkar_confirm_rollback'] ?? '';\n\n\t\treturn is_scalar( $value ) && '1' === sanitize_text_field( wp_unslash( (string) $value ) );\n\t}\n\n\t/** @param array<string, mixed> $source Request source. */",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\tprivate function redirect_to_batch( string $batch_uuid ): void {\n\t\t$url = add_query_arg(\n\t\t\tarray(\n\t\t\t\t'page'       => self::PAGE_SLUG,\n\t\t\t\t'batch_uuid' => $batch_uuid,\n\t\t\t),",
+              "\tprivate function redirect_to_batch( string $batch_uuid, bool $rollback_preview = false ): void {\n\t\t$query = array(\n\t\t\t'page'       => self::PAGE_SLUG,\n\t\t\t'batch_uuid' => $batch_uuid,\n\t\t);\n\t\tif ( $rollback_preview ) {\n\t\t\t$query['rollback_preview'] = '1';\n\t\t}\n\t\t$url = add_query_arg(\n\t\t\t$query,",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\tprivate function render_page(\n\t\t?CsvPreviewResult $preview_result,\n\t\t?ChunkedImportProgress $progress,\n\t\t?\\Throwable $error",
+              "\tprivate function render_page(\n\t\t?CsvPreviewResult $preview_result,\n\t\t?ChunkedImportProgress $progress,\n\t\t?array $rollback_preview,\n\t\t?\\Throwable $error",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\t\t<?php if ( null !== $progress ) : ?>\n\t\t\t\t<?php $this->render_progress( $progress ); ?>",
+              "\t\t\t<?php if ( null !== $progress ) : ?>\n\t\t\t\t<?php $this->render_progress( $progress, $rollback_preview ); ?>",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\tprivate function render_progress( ChunkedImportProgress $progress ): void {",
+              "\t/** @param array<string, int>|null $rollback_preview */\n\tprivate function render_progress( ChunkedImportProgress $progress, ?array $rollback_preview ): void {",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\t\t<?php if ( $progress->can_rollback() ) : ?>\n\t\t\t\t<?php $this->render_batch_action_form( $progress->batch_uuid(), 'rollback', __( 'بازگردانی قطعه بعدی', 'tazkar' ), 'delete' ); ?>\n\t\t\t<?php endif; ?>",
+              "\t\t\t<?php if ( $progress->can_rollback() && null === $rollback_preview ) : ?>\n\t\t\t\t<?php $this->render_batch_action_form( $progress->batch_uuid(), 'rollback_preview', __( 'پیش‌نمایش بازگردانی', 'tazkar' ), 'secondary' ); ?>\n\t\t\t<?php endif; ?>",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\t</div>\n\t\t<h3><?php echo esc_html__( 'نتیجه ردیف‌ها', 'tazkar' ); ?></h3>",
+              "\t\t</div>\n\t\t<?php if ( null !== $rollback_preview ) : ?>\n\t\t\t<?php $this->render_rollback_preview( $progress->batch_uuid(), $rollback_preview ); ?>\n\t\t<?php endif; ?>\n\t\t<h3><?php echo esc_html__( 'نتیجه ردیف‌ها', 'tazkar' ); ?></h3>",
+          )
+          preview_render = r'''
+          	/** @param array<string, int> $preview */
+          	private function render_rollback_preview( string $batch_uuid, array $preview ): void {
+          		?>
+          		<div class="notice notice-warning inline" style="max-width:1000px;padding:12px">
+          			<h3><?php echo esc_html__( 'پیش‌نمایش بازگردانی — هنوز هیچ تغییری اعمال نشده است', 'tazkar' ); ?></h3>
+          			<table class="widefat striped"><tbody>
+          				<tr><th><?php echo esc_html__( 'پیش‌نویس قابل انتقال به زباله‌دان', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['eligible_drafts'] ?? 0 ) ); ?></td></tr>
+          				<tr><th><?php echo esc_html__( 'ردیف در انتظار لغو', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['pending'] ?? 0 ) ); ?></td></tr>
+          				<tr><th><?php echo esc_html__( 'منتشرشده — حفظ می‌شود', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['published'] ?? 0 ) ); ?></td></tr>
+          				<tr><th><?php echo esc_html__( 'تأییدشده — حفظ می‌شود', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['approved'] ?? 0 ) ); ?></td></tr>
+          				<tr><th><?php echo esc_html__( 'ویرایش‌شده — حفظ می‌شود', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['edited'] ?? 0 ) ); ?></td></tr>
+          				<tr><th><?php echo esc_html__( 'گم‌شده یا با مالکیت متفاوت — تعارض', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( ( $preview['missing'] ?? 0 ) + ( $preview['foreign'] ?? 0 ) + ( $preview['other_conflicts'] ?? 0 ) ) ); ?></td></tr>
+          				<tr><th><?php echo esc_html__( 'تعامل‌های ثبت‌شده', 'tazkar' ); ?></th><td><?php echo esc_html( (string) ( $preview['interactions'] ?? 0 ) ); ?></td></tr>
+          			</tbody></table>
+          			<p><?php echo esc_html__( 'با تأیید زیر، فقط پیش‌نویس‌های بدون تغییر و متعلق به همین بسته به زباله‌دان منتقل می‌شوند؛ موارد منتشرشده، تأییدشده، ویرایش‌شده یا دارای تعارض حفظ خواهند شد.', 'tazkar' ); ?></p>
+          			<?php $this->render_batch_action_form( $batch_uuid, 'rollback', __( 'تأیید و اجرای بازگردانی', 'tazkar' ), 'delete', true ); ?>
+          		</div>
+          		<?php
+          	}
+          
+          '''
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\tprivate function render_batch_action_form( string $batch_uuid, string $action, string $label, string $button_class ): void {",
+              preview_render + "\tprivate function render_batch_action_form( string $batch_uuid, string $action, string $label, string $button_class, bool $confirmed = false ): void {",
+          )
+          replace_once(
+              'src/Admin/CsvPreviewPage.php',
+              "\t\t\t<input type=\"hidden\" name=\"batch_uuid\" value=\"<?php echo esc_attr( $batch_uuid ); ?>\">\n\t\t\t<?php wp_nonce_field",
+              "\t\t\t<input type=\"hidden\" name=\"batch_uuid\" value=\"<?php echo esc_attr( $batch_uuid ); ?>\">\n\t\t\t<?php if ( $confirmed ) : ?><input type=\"hidden\" name=\"tazkar_confirm_rollback\" value=\"1\"><?php endif; ?>\n\t\t\t<?php wp_nonce_field",
+          )
+          
+          # Unit test repository and writer support.
+          replace_once(
+              'tests/unit/ChunkedImportServiceTest.php',
+              "\tprivate bool $locked = false;",
+              "\tprivate bool $locked = false;\n\tprivate bool $user_locked = false;\n\tpublic ?string $status_after_lock = null;",
+          )
+          replace_once(
+              'tests/unit/ChunkedImportServiceTest.php',
+              "\tpublic function acquire_lock( int $batch_id, string $token, string $expires_at ): bool {",
+              "\tpublic function acquire_user_import_lock( int $user_id ): bool {\n\t\tunset( $user_id );\n\t\tif ( $this->user_locked ) {\n\t\t\treturn false;\n\t\t}\n\t\t$this->user_locked = true;\n\n\t\treturn true;\n\t}\n\n\tpublic function release_user_import_lock( int $user_id ): void {\n\t\tunset( $user_id );\n\t\t$this->user_locked = false;\n\t}\n\n\tpublic function has_active_batch( int $user_id ): bool {\n\t\treturn $user_id === ( $this->batch['created_by'] ?? 0 )\n\t\t\t&& in_array( (string) ( $this->batch['status'] ?? '' ), array( 'staged', 'processing', 'rollback_processing' ), true );\n\t}\n\n\tpublic function acquire_lock( int $batch_id, string $token, string $expires_at ): bool {",
+          )
+          replace_once(
+              'tests/unit/ChunkedImportServiceTest.php',
+              "\t\t$this->locked = true;\n\t\treturn true;",
+              "\t\t$this->locked = true;\n\t\tif ( null !== $this->status_after_lock ) {\n\t\t\t$this->batch['status'] = $this->status_after_lock;\n\t\t\t$this->status_after_lock = null;\n\t\t}\n\t\treturn true;",
+          )
+          
+          tests_insert = r'''
+          	public function test_second_active_batch_for_same_user_is_rejected(): void {
+          		$repository = new TazkarTestChunkedRepository();
+          		$writer     = new TazkarTestRollbackWriter();
+          		$service    = $this->service( $repository, $writer );
+          		$service->stage( $this->csv_with_rows( 1 ), 'first.csv', 9 );
+          
+          		$this->expectException( RuntimeException::class );
+          		$service->stage( $this->csv_with_rows( 1 ), 'second.csv', 9 );
+          	}
+          
+          	public function test_process_rechecks_batch_state_after_lock(): void {
+          		$repository = new TazkarTestChunkedRepository();
+          		$writer     = new TazkarTestRollbackWriter();
+          		$service    = $this->service( $repository, $writer );
+          		$progress   = $service->stage( $this->csv_with_rows( 1 ), 'race.csv', 9 );
+          		$repository->status_after_lock = 'rollback_processing';
+          
+          		$progress = $service->process( $progress->batch_uuid(), 9 );
+          
+          		self::assertSame( 'rollback_processing', $progress->status() );
+          		self::assertSame( 'pending', $repository->rows[1]['status'] );
+          		self::assertCount( 0, $writer->created );
+          	}
+          
+          	public function test_rollback_preview_is_non_mutating_and_reports_classifications(): void {
+          		$repository = new TazkarTestChunkedRepository();
+          		$writer     = new TazkarTestRollbackWriter();
+          		$service    = $this->service( $repository, $writer );
+          		$progress   = $service->stage( $this->csv_with_rows( 2 ), 'preview-rollback.csv', 10, 2 );
+          		$progress   = $service->process( $progress->batch_uuid(), 10 );
+          		$writer->inspection_outcomes[101] = RollbackAwareContentWriter::ROLLBACK_ELIGIBLE;
+          		$writer->inspection_outcomes[102] = RollbackAwareContentWriter::ROLLBACK_PUBLISHED;
+          		$writer->interaction_counts[102]  = 3;
+          
+          		$preview = $service->rollback_preview( $progress->batch_uuid(), 10 );
+          
+          		self::assertSame( 1, $preview['eligible_drafts'] );
+          		self::assertSame( 1, $preview['published'] );
+          		self::assertSame( 3, $preview['interactions'] );
+          		self::assertSame( 'imported', $repository->rows[1]['status'] );
+          		self::assertSame( 'imported', $repository->rows[2]['status'] );
+          		self::assertCount( 0, $writer->rollback_calls );
+          	}
+          
+          '''
+          replace_once(
+              'tests/unit/ChunkedImportServiceTest.php',
+              "\tpublic function test_rollback_cancels_pending_rows_and_removes_payload(): void {",
+              tests_insert + "\tpublic function test_rollback_cancels_pending_rows_and_removes_payload(): void {",
+          )
+          replace_once(
+              'tests/unit/ChunkedImportServiceTest.php',
+              "\t/** @var array<int, string> */\n\tpublic array $rollback_outcomes = array();",
+              "\t/** @var array<int, string> */\n\tpublic array $rollback_outcomes = array();\n\t/** @var array<int, string> */\n\tpublic array $inspection_outcomes = array();\n\t/** @var array<int, int> */\n\tpublic array $interaction_counts = array();",
+          )
+          replace_once(
+              'tests/unit/ChunkedImportServiceTest.php',
+              "\tpublic function rollback_owned_draft( int $post_id, string $batch_uuid, int $row_id ): string {",
+              "\tpublic function inspect_rollback( int $post_id, string $batch_uuid, int $row_id ): array {\n\t\tunset( $batch_uuid, $row_id );\n\n\t\treturn array(\n\t\t\t'outcome'      => $this->inspection_outcomes[ $post_id ] ?? self::ROLLBACK_ELIGIBLE,\n\t\t\t'interactions' => $this->interaction_counts[ $post_id ] ?? 0,\n\t\t);\n\t}\n\n\tpublic function rollback_owned_draft( int $post_id, string $batch_uuid, int $row_id ): string {",
+          )
+          
+          # Admin security regression.
+          replace_once(
+              'tests/unit/CsvPreviewPageImportSecurityTest.php',
+              "\t\tself::assertArrayHasKey( 'admin_post_tazkar_import_resume', $GLOBALS['tazkar_test_actions'] );\n\t\tself::assertArrayHasKey( 'admin_post_tazkar_import_rollback',",
+              "\t\tself::assertArrayHasKey( 'admin_post_tazkar_import_resume', $GLOBALS['tazkar_test_actions'] );\n\t\tself::assertArrayHasKey( 'admin_post_tazkar_import_rollback_preview', $GLOBALS['tazkar_test_actions'] );\n\t\tself::assertArrayHasKey( 'admin_post_tazkar_import_rollback',",
+          )
+          confirmation_test = r'''
+          	public function test_rollback_action_requires_explicit_confirmation(): void {
+          		$_POST['batch_uuid'] = '11111111-1111-4111-8111-111111111111';
+          
+          		$this->expectException( RuntimeException::class );
+          		$this->expectExceptionMessage( 'Rollback requires explicit administrator confirmation.' );
+          		( new CsvPreviewPage() )->rollback_import();
+          	}
+          
+          '''
+          replace_once(
+              'tests/unit/CsvPreviewPageImportSecurityTest.php',
+              "\tpublic function test_import_actions_require_capability(): void {",
+              confirmation_test + "\tpublic function test_import_actions_require_capability(): void {",
+          )
+          
+          # PHPStan WordPress function used by interaction preview.
+          replace_once(
+              'tests/phpstan-wordpress-stubs.php',
+              "function get_current_user_id() { return 1; }",
+              "function get_current_user_id() { return 1; }\nfunction get_comments_number( $post_id = 0 ) { return 0; }",
+          )
+          
+          # Real WordPress regression: reject overlapping active batch, preview conflicts and interactions.
+          replace_once(
+              'tests/wordpress-chunked-import-smoke.php',
+              "\t$progress = $service->stage( $path, '../chunked-import.csv', 1, 25 );\n} finally {",
+              "\t$progress = $service->stage( $path, '../chunked-import.csv', 1, 25 );\n\ttry {\n\t\t$service->stage( $path, 'overlapping-import.csv', 1, 25 );\n\t\t$fail( 'A second active batch for the same user was accepted.' );\n\t} catch ( RuntimeException $exception ) {\n\t\tif ( false === strpos( $exception->getMessage(), 'active import' ) ) {\n\t\t\tthrow $exception;\n\t\t}\n\t}\n} finally {",
+          )
+          replace_once(
+              'tests/wordpress-chunked-import-smoke.php',
+              "update_post_meta( $foreign_post_id, '_tazkar_import_row_id', 999999 );\n\n$iterations = 0;",
+              "update_post_meta( $foreign_post_id, '_tazkar_import_row_id', 999999 );\nwp_insert_comment(\n\tarray(\n\t\t'comment_post_ID' => $eligible_post_id,\n\t\t'comment_content' => 'Rollback preview interaction regression.',\n\t\t'comment_approved' => 1,\n\t)\n);\n\n$rollback_preview = $service->rollback_preview( $progress->batch_uuid(), 1 );\nif ( 55 !== $rollback_preview['eligible_drafts']\n\t|| 1 !== $rollback_preview['published']\n\t|| 1 !== $rollback_preview['approved']\n\t|| 1 !== $rollback_preview['edited']\n\t|| 1 !== $rollback_preview['missing']\n\t|| 1 !== $rollback_preview['foreign']\n\t|| 1 > $rollback_preview['interactions'] ) {\n\t$fail( 'Rollback preview classifications or interaction counts are incorrect.' );\n}\nif ( 'draft' !== get_post_status( $eligible_post_id ) ) {\n\t$fail( 'Rollback preview mutated an eligible draft.' );\n}\n\n$iterations = 0;",
+          )
+          
+          # Validate all expected additions are present and the dangerous direct button is gone.
+          checks = {
+              'src/Import/ChunkedImportService.php': ['rollback_preview(', 'acquire_user_import_lock', "status'], array( 'staged', 'processing'"],
+              'src/Admin/CsvPreviewPage.php': ['tazkar_import_rollback_preview', 'tazkar_confirm_rollback', 'پیش‌نمایش بازگردانی'],
+              'src/Import/WordPressContentWriter.php': ['inspect_rollback(', 'interaction_count(', 'ROLLBACK_EDITED'],
+              'tests/unit/ChunkedImportServiceTest.php': ['test_second_active_batch_for_same_user_is_rejected', 'test_process_rechecks_batch_state_after_lock'],
+          }
+          for path, needles in checks.items():
+              text = Path(path).read_text(encoding='utf-8')
+              for needle in needles:
+                  if needle not in text:
+                      raise SystemExit(f'{path}: missing expected text {needle!r}')
+          PY
+      - name: Run focused and repository quality checks
+        run: |
+          composer lint
+          vendor/bin/phpunit
+          vendor/bin/phpstan analyse --no-progress
+          vendor/bin/phpcs
+      - name: Commit repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src tests
+          git diff --cached --quiet && exit 1
+          git commit -m "fix: close Sprint 5 review blockers"
+          git push origin HEAD:agent/17-sprint-5-chunk-resume-rollback
