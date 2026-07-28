@@ -69,7 +69,25 @@ jobs:
         run: |
           php -r '$report = json_decode(file_get_contents("phpstan-report.json"), true); foreach ($report["files"] as $file => $details) { foreach ($details["messages"] as $message) { printf("%s:%d %s [%s]\n", $file, $message["line"], $message["message"], $message["identifier"] ?? "phpstan"); } } foreach ($report["errors"] as $error) { echo $error, "\n"; }'
           exit 1
-      - run: vendor/bin/phpunit
+      - name: Run PHPUnit and retain diagnostics
+        id: phpunit
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          vendor/bin/phpunit --colors=never 2>&1 | tee phpunit-report.txt
+      - name: Upload PHPUnit diagnostics
+        if: steps.phpunit.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpunit-report-${{ matrix.php }}
+          path: phpunit-report.txt
+          retention-days: 7
+      - name: Enforce PHPUnit
+        if: steps.phpunit.outcome == 'failure'
+        run: |
+          cat phpunit-report.txt
+          exit 1
       - run: composer build
       - uses: actions/upload-artifact@v4
         if: matrix.php == '8.3'
@@ -103,7 +121,7 @@ jobs:
           tools: composer:v2, wp-cli
       - run: composer install --no-interaction --prefer-dist --no-progress --quiet
       - run: composer build
-      - name: Run WordPress smoke suite
+      - name: Run WordPress 7.0.2 smoke suite
         id: wordpress_smoke
         continue-on-error: true
         shell: bash
@@ -116,13 +134,15 @@ jobs:
             wp core install --path=/tmp/wordpress --url=http://localhost --title=Tazkar --admin_user=admin --admin_password=password --admin_email=admin@example.com
             zip=$(find "$GITHUB_WORKSPACE/dist" -name 'tazkar-*.zip' -type f | head -n 1)
             wp plugin install "$zip" --path=/tmp/wordpress --activate
-            test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "1"
+            test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "2"
             wp plugin deactivate tazkar --path=/tmp/wordpress
-            test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "1"
+            test "$(wp option get tazkar_db_version --path=/tmp/wordpress)" = "2"
             wp plugin activate tazkar --path=/tmp/wordpress
             wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-content-model-smoke.php" --path=/tmp/wordpress
             wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-csv-preview-smoke.php" --path=/tmp/wordpress
+            wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-schema-v2-migration-smoke.php" --path=/tmp/wordpress
             wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-csv-import-smoke.php" --path=/tmp/wordpress
+            wp eval-file "$GITHUB_WORKSPACE/tests/wordpress-chunked-import-smoke.php" --path=/tmp/wordpress
           } 2>&1 | tee wordpress-smoke.log
       - name: Upload WordPress smoke diagnostics
         if: steps.wordpress_smoke.outcome == 'failure'

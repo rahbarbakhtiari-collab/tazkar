@@ -9,7 +9,7 @@
         <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
         <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
     </rule>
-    <config name="minimum_supported_wp_version" value="6.8"/>
+    <config name="minimum_supported_wp_version" value="7.0.2"/>
     <arg name="extensions" value="php"/>
     <arg value="sp"/>
 </ruleset>
