@@ -223,7 +223,7 @@ if ( 'draft' !== get_post_status( $approved_post_id ) || 'approved' !== get_post
 if ( 'عنوان ویرایش‌شده پس از ورود' !== get_the_title( $edited_post_id ) || 'draft' !== get_post_status( $edited_post_id ) ) {
 	$fail( 'Rollback changed a manually edited conflict.' );
 }
-if ( false !== get_post( $missing_post_id ) ) {
+if ( null !== get_post( $missing_post_id ) ) {
 	$fail( 'Missing-post conflict setup was not preserved.' );
 }
 if ( 'draft' !== get_post_status( $foreign_post_id ) || 999999 !== (int) get_post_meta( $foreign_post_id, '_tazkar_import_row_id', true ) ) {
