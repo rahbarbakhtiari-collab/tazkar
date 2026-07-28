@@ -370,7 +370,7 @@ final class TazkarTestChunkedRepository implements ChunkedImportRepository {
 			} else {
 				++$counts['processed'];
 			}
-			if ( isset( $counts[ $status ] ) ) {
+			if ( isset( $counts[ $status ] ) && ! in_array( $status, array( 'pending', 'processing' ), true ) ) {
 				++$counts[ $status ];
 			}
 			if ( 'conflict' === $row['rollback_status'] ) {
