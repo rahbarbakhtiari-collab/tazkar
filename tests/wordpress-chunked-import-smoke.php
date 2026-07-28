@@ -111,7 +111,7 @@ if ( 25 !== $progress->count( 'imported' ) || 35 !== $progress->count( 'pending'
 
 $interrupted_row_id = (int) $wpdb->get_var(
 	$wpdb->prepare(
-		"SELECT id FROM %i WHERE batch_id = %d AND status = 'pending' ORDER BY row_number ASC LIMIT 1",
+		"SELECT id FROM %i WHERE batch_id = %d AND status = 'pending' ORDER BY `row_number` ASC LIMIT 1",
 		$tables['import_rows'],
 		$batch_id
 	)
@@ -154,7 +154,7 @@ if ( $posts_before + 60 !== (int) wp_count_posts( ContentType::POST_TYPE )->draf
 
 $imported_rows = $wpdb->get_results(
 	$wpdb->prepare(
-		"SELECT id, wp_post_id FROM %i WHERE batch_id = %d AND status = 'imported' ORDER BY row_number ASC",
+		"SELECT id, wp_post_id FROM %i WHERE batch_id = %d AND status = 'imported' ORDER BY `row_number` ASC",
 		$tables['import_rows'],
 		$batch_id
 	),

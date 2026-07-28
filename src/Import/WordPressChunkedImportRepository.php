@@ -192,9 +192,9 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 		$table = Schema::table_names( $wpdb->prefix )['import_rows'];
 		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, batch_id, row_number, record_id, status, payload_hash, staged_payload, wp_post_id
+				"SELECT id, batch_id, `row_number`, record_id, status, payload_hash, staged_payload, wp_post_id
 				FROM %i WHERE batch_id = %d AND status = 'pending'
-				ORDER BY row_number ASC LIMIT %d",
+				ORDER BY `row_number` ASC LIMIT %d",
 				$table,
 				$batch_id,
 				$limit
@@ -323,7 +323,7 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 				SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) AS error,
 				SUM(CASE WHEN status IN ('pending','processing') THEN 1 ELSE 0 END) AS pending,
 				SUM(CASE WHEN rollback_status = 'conflict' THEN 1 ELSE 0 END) AS rollback_conflicts,
-				COALESCE(MIN(CASE WHEN status IN ('pending','processing') THEN row_number END), 0) AS next_row
+				COALESCE(MIN(CASE WHEN status IN ('pending','processing') THEN `row_number` END), 0) AS next_row
 				FROM %i WHERE batch_id = %d",
 				$tables['import_rows'],
 				$batch_id
@@ -394,9 +394,9 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 		$table = Schema::table_names( $wpdb->prefix )['import_rows'];
 		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT id, row_number, record_id, status, error_code, wp_post_id, payload_hash,
+				'SELECT id, `row_number`, record_id, status, error_code, wp_post_id, payload_hash,
 				attempt_count, rollback_status, rollback_error_code, terminal_at, payload_removed_at
-				FROM %i WHERE batch_id = %d ORDER BY row_number ASC',
+				FROM %i WHERE batch_id = %d ORDER BY `row_number` ASC',
 				$table,
 				$batch_id
 			),
@@ -414,10 +414,10 @@ final class WordPressChunkedImportRepository implements ChunkedImportRepository 
 		$table = Schema::table_names( $wpdb->prefix )['import_rows'];
 		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, row_number, record_id, status, wp_post_id, rollback_status
+				"SELECT id, `row_number`, record_id, status, wp_post_id, rollback_status
 				FROM %i
 				WHERE batch_id = %d AND status IN ('pending','processing','imported') AND rollback_status = ''
-				ORDER BY row_number ASC LIMIT %d",
+				ORDER BY `row_number` ASC LIMIT %d",
 				$table,
 				$batch_id,
 				$limit
