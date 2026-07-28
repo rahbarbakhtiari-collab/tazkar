@@ -369,13 +369,13 @@ final class CsvPreviewPage {
 		<?php
 	}
 
-	private function render_batch_action_form( string $batch_uuid, string $action, string $label, string $class ): void {
+	private function render_batch_action_form( string $batch_uuid, string $action, string $label, string $button_class ): void {
 		?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:0">
 			<input type="hidden" name="action" value="<?php echo esc_attr( 'tazkar_import_' . $action ); ?>">
 			<input type="hidden" name="batch_uuid" value="<?php echo esc_attr( $batch_uuid ); ?>">
 			<?php wp_nonce_field( 'tazkar_import_' . $action . '_' . $batch_uuid, 'tazkar_import_nonce' ); ?>
-			<?php submit_button( $label, $class, 'submit', false ); ?>
+			<?php submit_button( $label, $button_class, 'submit', false ); ?>
 		</form>
 		<?php
 	}
