@@ -1,11 +1,11 @@
 # وضعیت پروژه تذکار
 
 **شناسه سند:** `docs/management/project-status.md`  
-**نسخه:** ۱٫۸  
+**نسخه:** ۱٫۹  
 **تاریخ:** ۲۰۲۶/۰۷/۲۸  
 **وضعیت:** فعال  
 **سطح پروژه:** `critical`  
-**مرحله فعلی:** پایان اجرای فنی Sprint 5 و بازبینی مستقل پیش از ادغام
+**مرحله فعلی:** پایان اجرای Sprint 5 و بازبینی نهایی پیش از ادغام
 
 ---
 
@@ -23,9 +23,11 @@
 - Draft PR شماره 18 روی شاخه `agent/17-sprint-5-chunk-resume-rollback` باز است.
 - نسخه هدف و نسخه فعلی شاخه Sprint 5 برابر `0.6.0-alpha.1` است.
 - پیاده‌سازی کامل chunk، resume، lock، staging حداقلی، حذف payload و rollback امن در کد Production وجود دارد.
-- دو ایراد P1 قدیمیِ «نبود پردازش قطعه‌ای» و «نبود rollback بسته» رفع و threadهای منسوخ بسته شده‌اند.
-- همه گیت‌های خودکار، از جمله WordPress 7.0.2 + MySQL 8، در head فنی `55c1febabe14c44365f1495569bce9b71539381f` موفق شده‌اند.
-- PR تا دریافت بازبینی مستقل تازه معماری و امنیت در حالت Draft می‌ماند.
+- ایرادهای اولیه P1 درباره نبود پردازش قطعه‌ای و نبود rollback بسته رفع و threadهای منسوخ بسته شده‌اند.
+- دو finding تازه درباره batch فعال هم‌زمان و rollback بدون پیش‌نمایش نیز رفع شده‌اند.
+- race میان process و rollback با بازخوانی وضعیت authoritative زیر batch lock بسته شده است.
+- اجرای نهایی کد روی head پاک `d82aa9f0db5a01afe332caede0913d752534e82a` همه گیت‌های CI و PR Policy را با موفقیت گذرانده است.
+- PR تا بازبینی مستقل تازه روی head نهایی در حالت Draft می‌ماند.
 
 ## ۳. خروجی‌های Sprint 5
 
@@ -45,8 +47,11 @@
 - chunk پیش‌فرض 25 و سقف سخت 100 ردیف؛
 - بودجه زمانی 20 ثانیه برای حلقه هر درخواست؛
 - cursor، row selection، counts، state و lock کاملاً server-owned؛
-- lock با انقضای 120 ثانیه؛
+- lock پردازش با انقضای 120 ثانیه؛
+- قفل advisory مجزای هر کاربر برای ایجاد batch و جلوگیری اتمی از چند batch فعال هم‌زمان؛
+- رد batch جدید هنگامی که همان مدیر batch با وضعیت staged، processing یا rollback_processing دارد؛
 - recovery ردیف processing پس از وقفه؛
+- بازخوانی وضعیت batch پس از گرفتن lock و پیش از claim ردیف‌ها؛
 - process و resume تکرارپذیر بدون post یا outcome تکراری؛
 - حفظ دقیق `arabic_text`؛
 - ساخت فقط `tazkar_item` با وضعیت Draft و `needs_review`.
@@ -54,6 +59,9 @@
 ### ۳.۳ بازگردانی امن
 
 - rollback فقط برای ردیف‌های همان batch و مالک احراز‌شده؛
+- پیش‌نمایش غیرمخرب پیش از rollback؛
+- نمایش تعداد Draftهای واجد شرایط، ردیف‌های در انتظار، موارد منتشرشده، تأییدشده، ویرایش‌شده، گم‌شده، متعلق به مالک دیگر و تعامل‌های ثبت‌شده؛
+- الزام تأیید صریح مدیر و nonce اختصاصی پس از پیش‌نمایش؛
 - لغو pending/processing و حذف payload آن‌ها؛
 - انتقال Draft واجد شرایط به Trash، بدون حذف دائمی؛
 - بررسی post type، batch UUID، row ID و snapshot زمان import؛
@@ -63,22 +71,29 @@
 
 ### ۳.۴ پنل و امنیت
 
-- اقدام‌های مدیریتی جداگانه برای start، process، resume و rollback؛
+- اقدام‌های مدیریتی جداگانه برای start، process، resume، rollback preview و rollback تأییدشده؛
 - capability الزامی `import_tazkar_items`؛
 - nonce اختصاصی برای هر عملیات و batch؛
 - اعتبارسنجی UUID و resolution مالکیت در سمت سرور؛
-- نمایش فارسی و escape‌شده وضعیت batch، شمارنده‌ها و نتیجه ردیف‌ها؛
+- عدم اعتماد به cursor، state، row ID، post ID یا شمارنده ارسالی کاربر؛
+- نمایش فارسی و escape‌شده وضعیت batch، شمارنده‌ها، پیش‌نمایش rollback و نتیجه ردیف‌ها؛
 - عدم REST write عمومی، telemetry، درخواست بیرونی، daemon یا نگهداری فایل upload.
 
 ## ۴. شواهد آزمون
 
-آخرین اجرای معتبر فنی شامل موارد زیر موفق بوده است:
+اجرای معتبر نهایی کد شامل موارد زیر موفق بوده است:
 
+- CI run شماره `30365202261`، run number `256`؛
+- PR Policy run شماره `30365202305`، run number `108`؛
 - PHP 8.1، 8.3، 8.4 و 8.5؛
 - validation مخزن و fixtureها؛
 - Composer validate و dependency audit؛
 - secret scan؛
 - lint، PHPCS، PHPStan و PHPUnit؛
+- آزمون رد دومین batch فعال برای یک کاربر؛
+- آزمون بازخوانی وضعیت batch پس از lock؛
+- آزمون غیرمخرب بودن rollback preview و طبقه‌بندی وضعیت‌ها؛
+- آزمون الزام تأیید صریح rollback؛
 - activation smoke؛
 - build قطعی ZIP؛
 - نصب و فعال‌سازی واقعی روی WordPress `7.0.2` و MySQL 8؛
@@ -86,7 +101,7 @@
 - migration واقعی v1→v2 و اجرای دوباره آن؛
 - regression Sprintهای 0 تا 4؛
 - سناریوی 63 ردیفی Sprint 5 در چند درخواست؛
-- interruption/resume، عدم duplicate، حذف payload و rollback تعارض‌محور؛
+- interruption/resume، عدم duplicate، حفظ دقیق متن عربی، حذف payload، جلوگیری از batch فعال دوم، rollback preview، شمارش interaction و rollback تعارض‌محور؛
 - PR Policy.
 
 گزارش تفصیلی در `docs/project/23-SPRINT-05-CHUNKED-IMPORT-IMPLEMENTATION-REPORT.md` ثبت شده است.
@@ -118,7 +133,7 @@
 ## ۷. دروازه باقی‌مانده Sprint 5
 
 1. بازبینی مستقل تازه معماری و امنیت روی head نهایی؛
-2. رفع هر finding عملیاتی احتمالی و تکرار CI؛
+2. رفع finding عملیاتی احتمالی و تکرار CI، فقط در صورت وجود؛
 3. خروج PR شماره 18 از Draft؛
 4. ادغام طبق سیاست مخزن؛
 5. همگام‌سازی `main` و بستن Issue شماره 17.
