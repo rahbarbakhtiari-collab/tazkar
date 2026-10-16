@@ -1,0 +1,77 @@
+.dhikra-print-builder { max-width: 980px; }
+.dhikra-print-form { display: grid; gap: 22px; }
+.dhikra-print-form h2 { margin: 0; font-size: 18px; }
+.dhikra-print-form__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.dhikra-select-all { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #cfe0f5; border-radius: 12px; background: #f6faff; color: #1f4d91; font-weight: 800; }
+.dhikra-print-topic-grid label span { display: grid; gap: 4px; }
+.dhikra-print-topic-grid small { color: #64748b; font-size: 11px; font-weight: 500; }
+.dhikra-print-count { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.dhikra-print-count input { width: 150px; min-height: 48px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 12px; font: inherit; font-size: 18px; font-weight: 800; }
+.dhikra-print-count span { color: #64748b; }
+.dhikra-print-summary { display: grid; gap: 5px; padding: 16px 18px; border: 1px solid #d9e7f7; border-radius: 16px; background: #f7fbff; }
+.dhikra-print-summary strong { color: #164b91; }
+.dhikra-print-preview-shell { max-width: none; width: min(100%, 1280px); }
+.dhikra-print-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+.dhikra-print-toolbar h1 { margin: 0; }
+.dhikra-print-toolbar__actions { display: flex; align-items: center; gap: 10px; }
+.dhikra-print-toolbar__actions .dhikra-submit { width: auto; margin: 0; }
+.dhikra-print-report { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.dhikra-print-report span { padding: 7px 11px; border-radius: 999px; background: #edf5ff; color: #24578f; font-size: 12px; font-weight: 800; }
+.dhikra-print-report .is-warning { background: #fff7ed; color: #9a3412; }
+.dhikra-print-pages { display: grid; gap: 24px; justify-content: center; overflow-x: auto; padding: 8px 0 26px; direction: ltr; }
+.dhikra-print-page { box-sizing: border-box; width: 210mm; height: 297mm; padding: 8mm; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 5mm; background: #fff; box-shadow: 0 8px 34px rgba(15,23,42,.12); direction: rtl; page-break-after: always; break-after: page; }
+.dhikra-print-page:last-child { page-break-after: auto; break-after: auto; }
+.dhikra-print-cell { position: relative; min-width: 0; min-height: 0; }
+.dhikra-print-cell::after { content: ''; position: absolute; inset: -1.7mm; pointer-events: none; outline: .25mm dashed #aab8c6; outline-offset: 0; border-radius: 1mm; }
+.dhikra-print-card { --print-blue: #1F63C3; --print-ink: #102A43; box-sizing: border-box; position: relative; height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: visible; padding: 6mm 6mm 5mm; border: .35mm solid #d7e3f1; border-radius: 4mm; background: linear-gradient(180deg,#fbfdff 0%,#fff 34%,#fffdf7 100%); color: var(--print-ink); direction: rtl; font-family: 'Dhikra IRANSansX', Tahoma, Arial, sans-serif; }
+.dhikra-print-card__ornament { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(circle at 9% 7%,rgba(31,99,195,.08),transparent 25%), radial-gradient(circle at 92% 94%,rgba(212,167,44,.08),transparent 23%); }
+.dhikra-print-card__header,.dhikra-print-card__body,.dhikra-print-card__footer { position: relative; z-index: 1; }
+.dhikra-print-card__header { display: flex; align-items: center; justify-content: space-between; gap: 4mm; padding-bottom: 3mm; border-bottom: .25mm solid #e3ebf4; }
+.dhikra-print-card__brand { display: flex; align-items: center; gap: 2mm; color: #173f70; }
+.dhikra-print-card__brand > span { display: grid; place-items: center; width: 8mm; height: 8mm; border-radius: 2.6mm; background: var(--print-blue); color: #fff; font-family: 'Dhikra Scheherazade', serif; font-size: 6mm; line-height: 1; }
+.dhikra-print-card__brand strong { font-size: 3.5mm; }
+.dhikra-print-card__topic { max-width: 45%; padding: 1.4mm 2.5mm; border-radius: 999px; background: #edf5ff; color: #1f5da7; font-size: 2.7mm; font-weight: 800; text-align: center; }
+.dhikra-print-card__body { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 3.2mm; padding: 4mm 0 3mm; }
+.dhikra-print-card__body h2 { margin: 0; color: #173f70; font-size: 5mm; line-height: 1.55; text-align: center; }
+.dhikra-print-card__original { font-family: 'Dhikra Scheherazade','Noto Naskh Arabic',serif; font-size: 5.1mm; line-height: 1.75; font-weight: 600; text-align: justify; text-align-last: right; text-justify: inter-word; }
+.dhikra-print-card__translation { padding-top: 2.5mm; border-top: .25mm solid #eef2f7; font-size: 3.25mm; line-height: 1.85; text-align: justify; text-align-last: right; text-justify: inter-word; }
+.dhikra-print-card__reflection { padding: 2.4mm 3mm; border-radius: 2.4mm; background: #f7f9fc; color: #42566c; font-size: 2.85mm; line-height: 1.75; text-align: justify; text-align-last: right; text-justify: inter-word; }
+.dhikra-print-card__footer { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 3.5mm; padding-top: 3mm; border-top: .25mm solid #e3ebf4; }
+.dhikra-print-card__meta { display: grid; gap: .9mm; color: #5a6c80; font-size: 2.45mm; line-height: 1.55; text-align: justify; text-align-last: right; text-justify: inter-word; }
+.dhikra-print-card__qr { display: flex; direction: rtl; align-items: center; gap: 2.3mm; }
+.dhikra-print-card__qr img { display: block; width: 18mm; height: 18mm; padding: 1mm; border: .25mm solid #d8e2ec; border-radius: 1.6mm; background: #fff; }
+.dhikra-print-card__qr div { display: grid; max-width: 29mm; gap: .8mm; }
+.dhikra-print-card__qr strong { color: #174a84; font-size: 2.45mm; line-height: 1.45; }
+.dhikra-print-card__qr span { color: #66788a; font-size: 2.05mm; line-height: 1.45; }
+.dhikra-print-card--dense { padding: 5mm 5.2mm 4.5mm; }
+.dhikra-print-card--dense .dhikra-print-card__body { gap: 2.5mm; padding-block: 3mm 2.5mm; }
+.dhikra-print-card--dense .dhikra-print-card__body h2 { font-size: 4.4mm; }
+.dhikra-print-card--dense .dhikra-print-card__original { font-size: 4.4mm; line-height: 1.65; }
+.dhikra-print-card--dense .dhikra-print-card__translation { font-size: 2.9mm; line-height: 1.7; }
+.dhikra-print-card--dense .dhikra-print-card__reflection { font-size: 2.55mm; line-height: 1.6; }
+.dhikra-print-card--very-dense { padding: 4.2mm 4.7mm 4mm; }
+.dhikra-print-card--very-dense .dhikra-print-card__header { padding-bottom: 2mm; }
+.dhikra-print-card--very-dense .dhikra-print-card__body { gap: 1.8mm; padding-block: 2.3mm 2mm; }
+.dhikra-print-card--very-dense .dhikra-print-card__body h2 { font-size: 4mm; line-height: 1.4; }
+.dhikra-print-card--very-dense .dhikra-print-card__original { font-size: 3.9mm; line-height: 1.55; }
+.dhikra-print-card--very-dense .dhikra-print-card__translation { font-size: 2.6mm; line-height: 1.55; }
+.dhikra-print-card--very-dense .dhikra-print-card__reflection { font-size: 2.3mm; line-height: 1.5; padding-block: 1.8mm; }
+.dhikra-print-card--very-dense .dhikra-print-card__qr img { width: 16mm; height: 16mm; }
+.dhikra-print-card--very-dense .dhikra-print-card__qr span { display: none; }
+
+@media screen and (max-width: 900px) {
+  .dhikra-print-toolbar { align-items: flex-start; flex-direction: column; }
+  .dhikra-print-toolbar__actions { width: 100%; justify-content: space-between; }
+  .dhikra-print-pages { justify-content: start; }
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 0; }
+  html, body { width: 210mm !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  body.dhikra-app { overflow: visible !important; }
+  .dhikra-shell { width: 210mm !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  .dhikra-topbar,.dhikra-skip-link,.dhikra-print-toolbar,.dhikra-print-report,.dhikra-notice { display: none !important; }
+  .dhikra-main,.dhikra-panel,.dhikra-print-preview-shell { width: 210mm !important; max-width: none !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: #fff !important; }
+  .dhikra-print-pages { display: block !important; width: 210mm !important; padding: 0 !important; overflow: visible !important; }
+  .dhikra-print-page { width: 210mm !important; height: 297mm !important; margin: 0 !important; box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

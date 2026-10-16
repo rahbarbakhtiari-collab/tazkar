@@ -1,0 +1,898 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE S COPYRIGHT HOLDER
+# This file is distributed under the same license as the Dhikra package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Dhikra 1.6.3\n"
+"Report-Msgid-Bugs-To: none\n"
+"POT-Creation-Date: 2026-08-31 06:28+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: includes/class-dhikra-accounts.php:36 includes/class-dhikra-rest.php:252
+msgid "دست‌کم یک موضوع را انتخاب کنید."
+msgstr ""
+
+#: includes/class-dhikra-accounts.php:40
+msgid "موضوعات دلخواه ذخیره شد."
+msgstr ""
+
+#: includes/class-dhikra-accounts.php:56
+msgid "هویت بیرونی معتبر نیست."
+msgstr ""
+
+#: includes/class-dhikra-accounts.php:73
+msgid "کاربر ذِكْرَىٰ"
+msgstr ""
+
+#: includes/class-dhikra-accounts.php:106
+msgid "ذخیرهٔ هویت بیرونی انجام نشد."
+msgstr ""
+
+#: includes/class-dhikra-accounts.php:116
+msgid "اطلاعات اتصال حساب معتبر نیست."
+msgstr ""
+
+#: includes/class-dhikra-accounts.php:123
+msgid "این هویت بیرونی قبلاً به یک حساب عادی دیگر متصل شده است."
+msgstr ""
+
+#: includes/class-dhikra-accounts.php:143
+msgid "اتصال حساب انجام نشد."
+msgstr ""
+
+#: includes/class-dhikra-block.php:46 includes/class-dhikra-block.php:60
+#: includes/class-dhikra-helpers.php:31 includes/class-dhikra-router.php:108
+#: templates/app.php:92
+msgid "تلنگر جدید"
+msgstr ""
+
+#: includes/class-dhikra-block.php:49 includes/class-dhikra-router.php:117
+msgid "از علاقه‌مندی‌ها حذف شد."
+msgstr ""
+
+#: includes/class-dhikra-block.php:49 includes/class-dhikra-router.php:118
+msgid "این محتوا برای نمایش بدون اسکرول بیش‌ازحد بلند است."
+msgstr ""
+
+#: includes/class-dhikra-block.php:49 includes/class-dhikra-router.php:116
+msgid "به علاقه‌مندی‌ها افزوده شد."
+msgstr ""
+
+#: includes/class-dhikra-block.php:49 includes/class-dhikra-router.php:112
+msgid "در حال آوردن تلنگر تازه…"
+msgstr ""
+
+#: includes/class-dhikra-block.php:49 includes/class-dhikra-router.php:113
+msgid "دریافت تلنگر تازه انجام نشد."
+msgstr ""
+
+#: includes/class-dhikra-block.php:49 includes/class-dhikra-router.php:115
+msgid "متن و پیوند کپی شد."
+msgstr ""
+
+#: includes/class-dhikra-block.php:49 includes/class-dhikra-router.php:114
+msgid "کارت برای اشتراک‌گذاری آماده شد."
+msgstr ""
+
+#: includes/class-dhikra-block.php:61 templates/app.php:93
+#: templates/app.php:105
+msgid "علاقه‌مندی"
+msgstr ""
+
+#: includes/class-dhikra-block.php:62
+msgid "اشتراک‌گذاری"
+msgstr ""
+
+#: includes/class-dhikra-content.php:33
+msgid "تلنگرها"
+msgstr ""
+
+#: includes/class-dhikra-content.php:34
+msgid "تلنگر"
+msgstr ""
+
+#: includes/class-dhikra-content.php:35
+msgid "افزودن تلنگر"
+msgstr ""
+
+#: includes/class-dhikra-content.php:36
+msgid "افزودن تلنگر تازه"
+msgstr ""
+
+#: includes/class-dhikra-content.php:37
+msgid "ویرایش تلنگر"
+msgstr ""
+
+#: includes/class-dhikra-content.php:38
+msgid "تلنگر تازه"
+msgstr ""
+
+#: includes/class-dhikra-content.php:39
+msgid "مشاهدهٔ تلنگر"
+msgstr ""
+
+#: includes/class-dhikra-content.php:40
+msgid "جست‌وجوی تلنگرها"
+msgstr ""
+
+#: includes/class-dhikra-content.php:41
+msgid "تلنگری پیدا نشد."
+msgstr ""
+
+#: includes/class-dhikra-content.php:42
+msgid "تلنگری در زباله‌دان نیست."
+msgstr ""
+
+#: includes/class-dhikra-content.php:70 includes/class-dhikra-content.php:78
+msgid "موضوعات"
+msgstr ""
+
+#: includes/class-dhikra-content.php:71
+msgid "موضوع"
+msgstr ""
+
+#: includes/class-dhikra-content.php:72
+msgid "جست‌وجوی موضوعات"
+msgstr ""
+
+#: includes/class-dhikra-content.php:73
+msgid "همهٔ موضوعات"
+msgstr ""
+
+#: includes/class-dhikra-content.php:74
+msgid "ویرایش موضوع"
+msgstr ""
+
+#: includes/class-dhikra-content.php:75
+msgid "به‌روزرسانی موضوع"
+msgstr ""
+
+#: includes/class-dhikra-content.php:76
+msgid "افزودن موضوع"
+msgstr ""
+
+#: includes/class-dhikra-content.php:77
+msgid "نام موضوع تازه"
+msgstr ""
+
+#: includes/class-dhikra-content.php:92
+msgid "آیه"
+msgstr ""
+
+#: includes/class-dhikra-content.php:93
+msgid "حدیث"
+msgstr ""
+
+#: includes/class-dhikra-content.php:94
+msgid "دعا/مناجات"
+msgstr ""
+
+#: includes/class-dhikra-content.php:95
+msgid "سخن حکیمانه"
+msgstr ""
+
+#: includes/class-dhikra-content.php:96
+msgid "داستان کوتاه"
+msgstr ""
+
+#: includes/class-dhikra-content.php:125
+msgid "عنوان الزامی است."
+msgstr ""
+
+#: includes/class-dhikra-content.php:128
+msgid "متن اصلی الزامی است."
+msgstr ""
+
+#: includes/class-dhikra-content.php:128
+msgid "متن داستان الزامی است."
+msgstr ""
+
+#: includes/class-dhikra-content.php:131
+msgid "موضوع اصلی معتبر الزامی است."
+msgstr ""
+
+#: includes/class-dhikra-content.php:135
+msgid "برای آیه، ترجمه و منبع دقیق الزامی است."
+msgstr ""
+
+#: includes/class-dhikra-content.php:138
+msgid "برای حدیث و دعا/مناجات، ترجمه، گوینده و منبع الزامی است."
+msgstr ""
+
+#: includes/class-dhikra-content.php:141
+msgid "برای سخن حکیمانه، ثبت دست‌کم گوینده یا منبع الزامی است."
+msgstr ""
+
+#: includes/class-dhikra-content.php:144
+msgid "منبع داستان کوتاه الزامی است."
+msgstr ""
+
+#: includes/class-dhikra-content.php:148 includes/class-dhikra-settings.php:159
+msgid "عنوان"
+msgstr ""
+
+#: includes/class-dhikra-content.php:149 includes/class-dhikra-content.php:198
+#: includes/class-dhikra-settings.php:56 includes/class-dhikra-settings.php:160
+msgid "متن اصلی"
+msgstr ""
+
+#: includes/class-dhikra-content.php:149 includes/class-dhikra-settings.php:55
+msgid "متن داستان"
+msgstr ""
+
+#: includes/class-dhikra-content.php:150 includes/class-dhikra-content.php:199
+#: includes/class-dhikra-settings.php:161
+msgid "ترجمه"
+msgstr ""
+
+#: includes/class-dhikra-content.php:151 includes/class-dhikra-settings.php:162
+msgid "جملهٔ تأمل"
+msgstr ""
+
+#: includes/class-dhikra-content.php:152 includes/class-dhikra-content.php:201
+#: includes/class-dhikra-settings.php:163
+msgid "گوینده"
+msgstr ""
+
+#: includes/class-dhikra-content.php:153 includes/class-dhikra-content.php:202
+#: includes/class-dhikra-settings.php:164
+msgid "منبع"
+msgstr ""
+
+#: includes/class-dhikra-content.php:157
+#, php-format
+msgid "%1$s از سقف %2$d نویسه بلندتر است و در کارت بدون اسکرول جا نمی‌شود."
+msgstr ""
+
+#: includes/class-dhikra-content.php:181
+msgid "محتوای تلنگر"
+msgstr ""
+
+#: includes/class-dhikra-content.php:196
+msgid "نوع محتوا"
+msgstr ""
+
+#: includes/class-dhikra-content.php:197
+msgid "انتخاب کنید"
+msgstr ""
+
+#: includes/class-dhikra-content.php:197 includes/class-dhikra-content.php:281
+#: includes/class-dhikra-settings.php:165
+msgid "موضوع اصلی"
+msgstr ""
+
+#: includes/class-dhikra-content.php:197
+msgid "موضوع اصلی برای مرتب‌سازی و انتخاب تلنگر است؛ ظاهر همهٔ کارت‌ها یکسان است."
+msgstr ""
+
+#: includes/class-dhikra-content.php:200
+msgid "جملهٔ تأمل (اختیاری)"
+msgstr ""
+
+#: includes/class-dhikra-content.php:203
+msgid "شناسهٔ پایدار محتوا"
+msgstr ""
+
+#: includes/class-dhikra-content.php:204
+msgid "گروه ترجمه"
+msgstr ""
+
+#: includes/class-dhikra-content.php:205
+msgid "زبان"
+msgstr ""
+
+#: includes/class-dhikra-content.php:206
+msgid "اختیاری؛ در صورت خالی‌بودن خودکار ساخته می‌شود."
+msgstr ""
+
+#: includes/class-dhikra-content.php:206
+msgid "این کد ثابت است و تغییر نمی‌کند."
+msgstr ""
+
+#: includes/class-dhikra-content.php:206
+msgid "کد کوتاه پنج‌نویسه‌ای"
+msgstr ""
+
+#: includes/class-dhikra-content.php:208
+msgid ""
+"انتشار متن بیش‌ازحد بلند برای حفظ کارت بدون اسکرول متوقف می‌شود. پیش‌نمایش "
+"نهایی را پیش از انتشار بررسی کنید."
+msgstr ""
+
+#: includes/class-dhikra-content.php:279
+msgid "نوع"
+msgstr ""
+
+#: includes/class-dhikra-content.php:280
+msgid "کد"
+msgstr ""
+
+#: includes/class-dhikra-content.php:305
+msgid "تلنگر به پیش‌نویس بازگردانده شد:"
+msgstr ""
+
+#: includes/class-dhikra-content.php:335
+msgid "این موضوع در انتخاب کاربران و تلنگر تصادفی فعال باشد."
+msgstr ""
+
+#: includes/class-dhikra-content.php:335
+msgid "فعال برای انتخاب"
+msgstr ""
+
+#: includes/class-dhikra-content.php:337
+msgid "فعال برای انتخاب کاربران"
+msgstr ""
+
+#: includes/class-dhikra-data.php:117
+msgid "شناسهٔ تلنگر نامعتبر است."
+msgstr ""
+
+#: includes/class-dhikra-data.php:129
+msgid "کد کوتاه پس از ایجاد تغییر نمی‌کند."
+msgstr ""
+
+#: includes/class-dhikra-data.php:133
+msgid "کد کوتاه باید دقیقاً پنج نویسه و بدون ۰/O و ۱/I باشد."
+msgstr ""
+
+#: includes/class-dhikra-data.php:146
+msgid "ساخت کد کوتاه یکتا ممکن نشد."
+msgstr ""
+
+#: includes/class-dhikra-data.php:149
+msgid "این کد کوتاه قبلاً استفاده شده است."
+msgstr ""
+
+#: includes/class-dhikra-data.php:165
+msgid "ذخیرهٔ کد کوتاه انجام نشد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:23 includes/class-dhikra-importer.php:24
+msgid "ورود JSON"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:37
+msgid "ورود گروهی تلنگرها از JSON"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:40
+msgid ""
+"فایل باید UTF-8 و مطابق schema نسخهٔ 1.1 باشد. اعتبارسنجی فنی است؛ بازبینی "
+"دینی و ویرایشی بر عهدهٔ ناشر محتواست."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:45
+msgid "فایل JSON"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:46
+msgid "انتشار پس از اعتبارسنجی"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:46
+msgid "وضعیت موارد تازه"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:46
+msgid "پیش‌نویس"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:47
+msgid "به‌روزرسانی محتوا"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:47
+msgid "ردکردن"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:47
+msgid "شناسهٔ تکراری"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:49
+msgid "اعتبارسنجی و ورود"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:52
+msgid "JSON Schema"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:52
+msgid "نمونهٔ بستهٔ JSON"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:59
+msgid "دسترسی کافی ندارید."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:63
+msgid "فایل JSON دریافت نشد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:68
+msgid "حجم فایل باید کمتر از ۴ مگابایت باشد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:72
+msgid "خواندن فایل انجام نشد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:76
+#, php-format
+msgid "JSON نامعتبر است: %s"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:82
+#, php-format
+msgid "ورود متوقف شد؛ %d خطای اعتبارسنجی وجود دارد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:92 includes/class-dhikra-importer.php:188
+#, php-format
+msgid "ردیف %1$d: %2$s"
+msgstr ""
+
+#: includes/class-dhikra-importer.php:101
+#, php-format
+msgid "ورود پایان یافت: %1$d ساخته شد، %2$d به‌روزرسانی شد و %3$d رد شد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:109
+msgid "ریشهٔ فایل باید یک شیء JSON باشد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:113
+msgid "schema_version باید 1.1 باشد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:117
+msgid "زبان بسته الزامی است."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:120
+msgid "آرایهٔ items خالی یا نامعتبر است."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:124
+msgid "هر بسته حداکثر ۱۰۰۰ تلنگر می‌تواند داشته باشد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:130
+#, php-format
+msgid "ردیف %d باید شیء باشد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:135
+#, php-format
+msgid "ردیف %d شناسهٔ پایدار ندارد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:137
+#, php-format
+msgid "شناسهٔ %s در بسته تکراری است."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:158
+#, php-format
+msgid "ردیف %d نوع محتوای معتبر ندارد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:170
+#, php-format
+msgid "ردیف %d موضوع اصلی ندارد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:191
+#, php-format
+msgid "ردیف %d کد کوتاه نامعتبر دارد."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:194
+#, php-format
+msgid "کد کوتاه %s در بسته تکراری است."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:213
+msgid "کد کوتاه رکورد موجود با فایل یکسان نیست و قابل تغییر نیست."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:216
+msgid "کد کوتاه درخواستی قبلاً استفاده شده است."
+msgstr ""
+
+#: includes/class-dhikra-importer.php:290
+msgid "نام موضوع خالی است."
+msgstr ""
+
+#: includes/class-dhikra-mobile-auth.php:74
+msgid ""
+"برای ورود و ثبت‌نام، نسخه ۱.۱.۳ یا جدیدتر افزونه «ورود پیامکی مناهل با "
+"IPPanel» باید نصب و فعال باشد."
+msgstr ""
+
+#: includes/class-dhikra-mobile-auth.php:80
+msgid "فرم ورود پیامکی در دسترس نیست. تنظیمات افزونه پیامکی را بررسی کنید."
+msgstr ""
+
+#: includes/class-dhikra-mobile-auth.php:94
+msgid "ذِكْرَىٰ:"
+msgstr ""
+
+#: includes/class-dhikra-mobile-auth.php:94
+msgid ""
+"ورود و ثبت‌نام این نسخه فقط با OTP موبایل انجام می‌شود. نسخه ۱.۱.۳ یا جدیدتر "
+"افزونه «ورود پیامکی مناهل با IPPanel» را نصب و فعال کنید."
+msgstr ""
+
+#: includes/class-dhikra-random.php:146
+msgid "تلنگری برای نمایش موجود نیست."
+msgstr ""
+
+#: includes/class-dhikra-rest.php:132
+msgid "API عمومی غیرفعال است."
+msgstr ""
+
+#: includes/class-dhikra-rest.php:136
+msgid "برای این عملیات باید وارد شوید."
+msgstr ""
+
+#: includes/class-dhikra-rest.php:181
+msgid "درخواست‌ها بیش از حد سریع است."
+msgstr ""
+
+#: includes/class-dhikra-rest.php:186
+msgid "تلنگر واجد شرایطی وجود ندارد."
+msgstr ""
+
+#: includes/class-dhikra-rest.php:198 includes/class-dhikra-rest.php:232
+msgid "تلنگر پیدا نشد."
+msgstr ""
+
+#: includes/class-dhikra-rest.php:236
+msgid "تغییر علاقه‌مندی ذخیره نشد."
+msgstr ""
+
+#: includes/class-dhikra-rest.php:273
+msgid "افزونهٔ جانبی نتوانست هویت بیرونی را تأیید کند."
+msgstr ""
+
+#: includes/class-dhikra-router.php:166 templates/app.php:77
+msgid "ورود"
+msgstr ""
+
+#: includes/class-dhikra-router.php:167
+msgid "ثبت‌نام"
+msgstr ""
+
+#: includes/class-dhikra-router.php:168
+msgid "بازیابی رمز عبور"
+msgstr ""
+
+#: includes/class-dhikra-router.php:169
+msgid "تعیین رمز تازه"
+msgstr ""
+
+#: includes/class-dhikra-router.php:170 templates/app.php:75
+#: templates/app.php:108 templates/app.php:111
+msgid "حساب من"
+msgstr ""
+
+#: includes/class-dhikra-router.php:171 templates/app.php:74
+#: templates/app.php:108
+msgid "علاقه‌مندی‌ها"
+msgstr ""
+
+#: includes/class-dhikra-router.php:172
+msgid "تاریخچه"
+msgstr ""
+
+#: includes/class-dhikra-security.php:47
+msgid "موضوعات غیرفعال‌شده"
+msgstr ""
+
+#: includes/class-dhikra-security.php:48
+msgid "تلنگرهای علاقه‌مندی"
+msgstr ""
+
+#: includes/class-dhikra-security.php:49
+msgid "تاریخچهٔ تلنگرها"
+msgstr ""
+
+#: includes/class-dhikra-security.php:50
+msgid "بسترهای هویتی پیوندخورده"
+msgstr ""
+
+#: includes/class-dhikra-security.php:85
+msgid ""
+"ذِكْرَىٰ برای کاربران واردشده، علاقه‌مندی‌ها، حداکثر ۱۰۰ تلنگر اخیر و فهرست "
+"موضوعات غیرفعال‌شده را در همان سایت ذخیره می‌کند. ورود و ثبت‌نام با افزونه "
+"«ورود پیامکی مناهل با IPPanel» انجام می‌شود؛ این افزونه شماره موبایل و کد "
+"یک‌بارمصرف را برای ارسال پیامک به IPPanel Edge می‌فرستد و شماره نرمال‌شده را در "
+"شناسنامه کاربر وردپرس نگه می‌دارد. در صفحات مستقل برنامک، SDK رسمی ایتا "
+"مستقیماً از developer.eitaa.com بارگیری می‌شود. این نسخه هیچ دادهٔ هویتی ایتا "
+"را بدون اعتبارسنجی سمت سرور قبول یا ذخیره نمی‌کند."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:24
+msgid "تنظیمات ذِكْرَىٰ"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:25 includes/class-dhikra-settings.php:130
+msgid "تنظیمات"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:70
+msgid "زیرمسیر نامعتبر بود و به مقدار پیش‌فرض بازگشت."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:92
+#, php-format
+msgid "جای‌نگهدارهای ناشناخته در الگوی %1$s حذف شدند: %2$s"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:135
+msgid "نشانی‌ها و رفتار اصلی"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:137
+msgid "زیرمسیر صفحهٔ اصلی"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:138
+msgid "استفاده از ریشهٔ سایت"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:138
+msgid "ساختار نشانی‌ها"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:138
+msgid ""
+"فقط برای سایتی که عمدتاً به ذِكْرَىٰ اختصاص دارد. این حالت ممکن است با برگه‌ها و "
+"نشانی‌های موجود تداخل ایجاد کند."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:139
+msgid "عنوان دکمهٔ تلنگر تازه"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:140
+msgid ""
+"تلنگرهای اخیر تا این تعداد، در صورت کافی‌بودن محتوا، دوباره انتخاب نمی‌شوند."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:140
+msgid "پنجرهٔ جلوگیری از تکرار"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:145
+msgid "برنامک ایتا"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:146
+msgid ""
+"نسخهٔ عمومی افزونه با SDK رسمی ایتا سازگار است و در WebView ایتا به‌صورت "
+"تمام‌ارتفاع اجرا می‌شود."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:148
+msgid "لینک برنامک"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:149
+msgid "آدرس مقصد HTTPS"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:149
+msgid "همین آدرس باید بدون ریدایرکت در فیلد «آدرس مقصد» پنل ایتایار ثبت شود."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:154
+msgid "عناصر عمومی کارت"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:155
+msgid "این تنظیم برای همهٔ کارت‌ها یکسان است. فیلد خالی به‌طور خودکار حذف می‌شود."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:166
+msgid "نشان ذِكْرَىٰ"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:175
+msgid "متن اشتراک‌گذاری"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:176
+msgid ""
+"الگوی عمومی همیشه موجود است. الگوی خالی هر پیام‌رسان از الگوی عمومی استفاده "
+"می‌کند."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:178
+msgid "ایتا"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:178
+msgid "بله"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:178
+msgid "تلگرام"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:178
+msgid "عمومی"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:181
+msgid "پیش‌نمایش الگوی عمومی"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:186
+msgid "حساب و API"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:189
+msgid "ورود و ثبت‌نام"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:191
+msgid "فقط شماره موبایل و رمز یک‌بارمصرف"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:192
+msgid ""
+"حساب موجود با شماره موبایل شناسایی می‌شود و برای شماره تازه، پس از تأیید OTP "
+"حساب وردپرس ساخته می‌شود."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:194
+msgid "افزونه پیامکی فعال است اما کلید API، فرستنده یا پترن کامل نیست."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:194
+msgid "افزونه پیامکی نصب است اما ورود OTP در تنظیمات آن غیرفعال است."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:194
+msgid "ورود پیامکی آماده استفاده است."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:195
+msgid "تنظیمات ورود پیامکی"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:197
+msgid "افزونه «ورود پیامکی مناهل با IPPanel» نصب یا فعال نیست."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:201
+msgid "API عمومی"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:201
+msgid "خواندن تلنگرهای منتشرشده بدون کلید فعال باشد."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:206
+msgid "حذف داده"
+msgstr ""
+
+#: includes/class-dhikra-settings.php:207
+msgid "هنگام حذف افزونه، همهٔ تنظیمات و داده‌های اختصاصی ذِكْرَىٰ حذف شوند."
+msgstr ""
+
+#: includes/class-dhikra-settings.php:208
+msgid "پیش‌فرض خاموش است. غیرفعال‌سازی هیچ داده‌ای را حذف نمی‌کند."
+msgstr ""
+
+#: templates/app.php:20
+msgid "صفحه‌بندی"
+msgstr ""
+
+#: templates/app.php:22
+msgid "قبلی"
+msgstr ""
+
+#: templates/app.php:24
+#, php-format
+msgid "صفحهٔ %1$d از %2$d"
+msgstr ""
+
+#: templates/app.php:26
+msgid "بعدی"
+msgstr ""
+
+#: templates/app.php:68
+msgid "رفتن به محتوای اصلی"
+msgstr ""
+
+#: templates/app.php:72
+msgid "پیمایش ذِكْرَىٰ"
+msgstr ""
+
+#: templates/app.php:91
+msgid "عملیات کارت"
+msgstr ""
+
+#: templates/app.php:93
+msgid "ذخیره"
+msgstr ""
+
+#: templates/app.php:94
+msgid "اشتراک"
+msgstr ""
+
+#: templates/app.php:95
+msgid "کپی"
+msgstr ""
+
+#: templates/app.php:100
+msgid "ورود و ثبت‌نام با موبایل"
+msgstr ""
+
+#: templates/app.php:105
+msgid "تلنگر اخیر"
+msgstr ""
+
+#: templates/app.php:105
+msgid "حساب کاربری"
+msgstr ""
+
+#: templates/app.php:105
+msgid "خروج"
+msgstr ""
+
+#: templates/app.php:105
+msgid "ذخیرهٔ موضوعات"
+msgstr ""
+
+#: templates/app.php:105
+msgid "موضوعات تازه به‌صورت پیش‌فرض فعال‌اند. دست‌کم یک موضوع باید انتخاب بماند."
+msgstr ""
+
+#: templates/app.php:105
+msgid "موضوعات دلخواه"
+msgstr ""
+
+#: templates/app.php:108 templates/app.php:111
+msgid "بازگشت به حساب"
+msgstr ""
+
+#: templates/app.php:108
+msgid "حذف"
+msgstr ""
+
+#: templates/app.php:108
+msgid "مشاهده"
+msgstr ""
+
+#: templates/app.php:108
+msgid "هنوز تلنگری ذخیره نشده است."
+msgstr ""
+
+#: templates/app.php:111
+msgid "تاریخچه‌ای وجود ندارد."
+msgstr ""
+
+#: templates/app.php:111
+msgid "تلنگرهای اخیر"
+msgstr ""
+
+#: templates/app.php:113
+msgid "بازگشت به تلنگرها"
+msgstr ""
+
+#: templates/app.php:113
+msgid "صفحه پیدا نشد"
+msgstr ""
