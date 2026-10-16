@@ -1,0 +1,18 @@
+{
+  "apiVersion": 3,
+  "name": "dhikra/telangor",
+  "version": "1.6.3",
+  "title": "ذِكْرَىٰ — تلنگر",
+  "category": "widgets",
+  "icon": "format-quote",
+  "description": "نمایش یک تلنگر تصادفی از ذِكْرَىٰ.",
+  "textdomain": "dhikra",
+  "editorScript": "file:./assets/js/block.js",
+  "supports": {
+    "html": false,
+    "align": [
+      "wide",
+      "full"
+    ]
+  }
+}
